@@ -24,7 +24,7 @@ export const PICKABLE_ITEMS_DEF = [
     name: '光る青キノコ',
     emoji: '🍄',
     color: 0x48cae4,
-    pos: new THREE.Vector3(-6, 0.5, -5),
+    pos: new THREE.Vector3(-6, 0.5, -2.5),
   },
   {
     id: 'coin',
@@ -235,9 +235,9 @@ export class IslandWorld {
 
     this.scene.add(altar);
 
-    // 3. 古井戸 (Ancient Well) - 北西 (x: -5, z: -6)
+    // 3. 古井戸 (Ancient Well) - 西側 (x: -4.5, z: -2.5)
     const well = new THREE.Group();
-    well.position.set(-5, 1.4, -6);
+    well.position.set(-4.5, 1.4, -2.5);
 
     const wellRing = new THREE.Mesh(
       new THREE.CylinderGeometry(0.9, 0.9, 0.7, 8, 1, true),
@@ -247,8 +247,8 @@ export class IslandWorld {
     well.add(wellRing);
 
     // 不気味な紫の光
-    const wellLight = new THREE.PointLight(0x9d4edd, 1.8, 4);
-    wellLight.position.set(0, 0.2, 0);
+    const wellLight = new THREE.PointLight(0x9d4edd, 2.2, 5);
+    wellLight.position.set(0, 0.3, 0);
     well.add(wellLight);
 
     this.scene.add(well);

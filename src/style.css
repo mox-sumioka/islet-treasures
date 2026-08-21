@@ -136,28 +136,30 @@ body, html {
    ======================================================== */
 #interact-prompt {
   position: absolute;
-  bottom: 140px;
+  top: 75px;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(45, 30, 20, 0.85);
+  background: rgba(45, 30, 20, 0.9);
+  border: 2px solid var(--accent-gold);
   color: #fff;
-  padding: 8px 20px;
+  padding: 10px 24px;
   border-radius: 24px;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 700;
   display: flex;
   align-items: center;
-  gap: 8px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(6px);
-  transition: all 0.2s ease;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(8px);
+  transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
   pointer-events: auto;
   cursor: pointer;
+  z-index: 50;
 }
 
 .prompt-hidden {
   opacity: 0;
-  transform: translate(-50%, 10px) !important;
+  transform: translate(-50%, -15px) !important;
   pointer-events: none !important;
 }
 

@@ -230,45 +230,45 @@ export function createIslandNPCs(scene) {
   });
   npcs.push(gull);
 
-  // 3. 🦀 浜辺のカニ坊や (Crab)
-  const crab = new ResidentNPC('crab', '浜辺のカニ坊や', new THREE.Vector3(6.5, 0.5, 4.5), scene, (group) => {
-    const redMat = new THREE.MeshStandardMaterial({ color: 0xe76f51, roughness: 0.7, flatShading: true });
+  // 3. 🦀 浜辺のカニ坊や (Crab) - 桟橋すぐ右手の浜辺 (x: 4.5, z: 6.5)
+  const crab = new ResidentNPC('crab', '浜辺のカニ坊や', new THREE.Vector3(4.5, 0.5, 6.5), scene, (group) => {
+    const redMat = new THREE.MeshStandardMaterial({ color: 0xe76f51, roughness: 0.6, flatShading: true });
 
-    // 甲羅
-    const shell = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.4, 0.2, 8), redMat);
-    shell.position.y = 0.15;
+    // 少し大きめの甲羅
+    const shell = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.52, 0.26, 8), redMat);
+    shell.position.y = 0.2;
     shell.castShadow = true;
     group.add(shell);
 
     // ハサミ (Claws)
-    [-0.45, 0.45].forEach((cx, idx) => {
-      const claw = new THREE.Mesh(new THREE.SphereGeometry(0.16, 6, 6), redMat);
+    [-0.55, 0.55].forEach((cx, idx) => {
+      const claw = new THREE.Mesh(new THREE.SphereGeometry(0.2, 6, 6), redMat);
       claw.scale.set(1.4, 1, 0.6);
-      claw.position.set(cx, 0.3, 0.2);
+      claw.position.set(cx, 0.38, 0.25);
       group.add(claw);
     });
 
     // 飛び出ためだま
-    [-0.14, 0.14].forEach(ex => {
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), new THREE.MeshBasicMaterial({ color: 0x000000 }));
-      eye.position.set(ex, 0.38, 0.28);
+    [-0.18, 0.18].forEach(ex => {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+      eye.position.set(ex, 0.48, 0.35);
       group.add(eye);
     });
   });
   npcs.push(crab);
 
-  // 4. 👤 古井戸の影ぼうし (Shadow)
-  const shadow = new ResidentNPC('shadow', '古井戸の影ぼうし', new THREE.Vector3(-4.8, 1.4, -4.8), scene, (group) => {
-    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x240046, transparent: true, opacity: 0.85 });
+  // 4. 👤 古井戸の影ぼうし (Shadow) - 古井戸のすぐ横 (x: -4.5, z: -1.2)
+  const shadow = new ResidentNPC('shadow', '古井戸の影ぼうし', new THREE.Vector3(-4.5, 1.4, -1.2), scene, (group) => {
+    const shadowMat = new THREE.MeshBasicMaterial({ color: 0x240046, transparent: true, opacity: 0.9 });
 
-    const body = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.9, 8), shadowMat);
-    body.position.y = 0.45;
+    const body = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.1, 8), shadowMat);
+    body.position.y = 0.55;
     group.add(body);
 
     // 光る紫の目
-    [-0.09, 0.09].forEach(ex => {
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), new THREE.MeshBasicMaterial({ color: 0xc77dff }));
-      eye.position.set(ex, 0.6, 0.24);
+    [-0.12, 0.12].forEach(ex => {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.07, 6, 6), new THREE.MeshBasicMaterial({ color: 0xc77dff }));
+      eye.position.set(ex, 0.75, 0.3);
       group.add(eye);
     });
   });
