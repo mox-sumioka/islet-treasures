@@ -259,6 +259,39 @@ export class IslandWorld {
     });
 
     this.scene.add(altar);
+    this.altarGroup = altar;
+
+    // 4つ揃った時に光る祭壇の光の魔法陣 & 光柱
+    const beamGeo = new THREE.CylinderGeometry(1.8, 1.8, 15, 16, 1, true);
+    const beamMat = new THREE.MeshBasicMaterial({
+      color: 0xffd166,
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide
+    });
+    this.altarBeam = new THREE.Mesh(beamGeo, beamMat);
+    this.altarBeam.position.set(0, 7.5, 0);
+    this.scene.add(this.altarBeam);
+
+    const circleGeo = new THREE.RingGeometry(0.5, 2.5, 24);
+    const circleMat = new THREE.MeshBasicMaterial({
+      color: 0xffd166,
+      transparent: true,
+      opacity: 0,
+      side: THREE.DoubleSide
+    });
+    this.altarCircle = new THREE.Mesh(circleGeo, circleMat);
+    this.altarCircle.rotation.x = -Math.PI / 2;
+    this.altarCircle.position.set(0, 1.45, 0);
+    this.scene.add(this.altarCircle);
+  }
+
+  showAltarGuideBeam() {
+    if (this.altarBeam && this.altarCircle) {
+      this.altarBeam.material.opacity = 0.45;
+      this.altarCircle.material.opacity = 0.8;
+    }
+  }
 
     // 3. 古井戸 (Ancient Well) - 西側 (x: -4.5, z: -2.5)
     const well = new THREE.Group();
@@ -449,12 +482,10 @@ export class IslandWorld {
       this.scene.add(this.lighthouseLight.target);
     }
 
-    // 3. 拾えるアイテムの浮遊・回転
-    this.pickables.forEach(p => {
-      if (!p.isCollected) {
-        p.mesh.rotation.y += delta * 2;
-        p.mesh.position.y = 0.3 + Math.sin(time * 3 + p.pos.x) * 0.08;
-      }
-    });
+    // 4. 祭壇の光柱の回転
+    if (this.altarBeam && this.altarBeam.material.opacity > 0) {
+      this.altarBeam.rotation.y += delta * 1.5;
+      this.altarCircle.rotation.z += delta * 0.8;
+    }
   }
 }

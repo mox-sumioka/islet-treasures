@@ -239,24 +239,27 @@ export class GameStateManager {
     this.ui.showToast(`🎉 【${def.name}】を分けてもらった！手帳に記憶が蘇る… (${this.treasures.length}/4)`);
     this.ui.updateTreasureCount(this.treasures.length);
 
-    // 4つ集まったら祭壇へ促す
-    if (this.treasures.length === 4) {
+    // 4つ集まったら祭壇へ促す & 祭壇を黄金に光らせる！
+    if (this.treasures.length >= 4) {
+      if (this.world && this.world.showAltarGuideBeam) {
+        this.world.showAltarGuideBeam();
+      }
       setTimeout(() => {
-        this.ui.showToast('🌟 4つの宝物がすべて揃った！中央の祭壇へ向かおう！');
-      }, 2500);
+        this.ui.showToast('🌟 4つの宝物がすべて揃った！中央の光る祭壇へ向かおう！');
+      }, 2000);
     }
   }
 
-  // 祭壇への奉納
-  checkAltarInteraction() {
-    const altarPos = new THREE.Vector3(0, 1.4, 0);
-    const dist = this.player.group.position.distanceTo(altarPos);
+  // 祭壇への奉納 (XZ水平距離で確実に判定)
+  checkAltarInteraction(force = false) {
+    const px = this.player.group.position.x;
+    const pz = this.player.group.position.z;
+    const horizontalDist = Math.hypot(px, pz); // XZ平面の水平距離 (中心 0, 0 からの距離)
 
-    if (dist < 5.0) {
+    if (horizontalDist < 4.0 || force) {
       if (this.treasures.length >= 4) {
         this.triggerEnding();
       } else {
-        // 宝物が足りない場合は手帳を開いて状況を見せる
         this.ui.renderDiary();
         this.ui.diaryModal.classList.remove('hidden');
         this.ui.showToast(`🏛️ 祭壇の封印には4つの宝物が必要です (現在 ${this.treasures.length}/4)`);
@@ -269,19 +272,19 @@ export class GameStateManager {
     this.isEndingTriggered = true;
 
     // 1. 祭壇の台座に4つの宝物を光らせて配置
-    if (this.world.placeTreasuresOnAltar) {
+    if (this.world && this.world.placeTreasuresOnAltar) {
       this.world.placeTreasuresOnAltar();
     }
 
     // 2. お祝いファンファーレ & 紙吹雪
-    confetti({ particleCount: 250, spread: 120, origin: { y: 0.5 } });
+    confetti({ particleCount: 300, spread: 140, origin: { y: 0.5 } });
     islandAudio.playTreasureFanfare();
     this.ui.showToast('🌟 祭壇の封印が解かれた！島の記憶がひとつになる…');
 
     // 3. エンディングモーダル表示
     setTimeout(() => {
       this.ui.showEndingModal();
-    }, 1500);
+    }, 1200);
   }
 
   removeItem(itemId) {

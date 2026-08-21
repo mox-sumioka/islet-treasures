@@ -251,15 +251,25 @@ function main() {
     }
   });
 
-  // 毎フレームのインタラクトプロンプト自動更新
+  // 毎フレームのインタラクトプロンプト自動更新 & 自動奉納
   function updateProximityPrompts() {
-    const pPos = player.group.position;
+    const px = player.group.position.x;
+    const pz = player.group.position.z;
+    const horizontalDist = Math.hypot(px, pz); // 祭壇中心 (0, 0) からの水平距離
 
-    // 1. 祭壇の近く (半径5.0m以内)
-    const altarDist = pPos.distanceTo(new THREE.Vector3(0, 1.4, 0));
-    if (altarDist < 5.0) {
+    // 4つの宝物があれば光の柱を常時点灯
+    if (gameState.treasures.length >= 4 && world.showAltarGuideBeam) {
+      world.showAltarGuideBeam();
+    }
+
+    // 1. 祭壇の近く (半径4.0m以内)
+    if (horizontalDist < 4.0) {
       if (gameState.treasures.length >= 4) {
-        ui.promptText.innerHTML = '🌟 <strong>4つの宝物を祭壇に捧げる</strong> (クリックまたは [E])';
+        ui.promptText.innerHTML = '🌟 <strong>4つの宝物を祭壇に捧げる</strong> (奉納中…)';
+        // 祭壇の台座の内側 (半径2.5m以内) に入ったら自動的に奉納発動！
+        if (horizontalDist < 2.5 && !gameState.isEndingTriggered) {
+          gameState.checkAltarInteraction(true);
+        }
       } else {
         ui.promptText.innerHTML = `🏛️ <strong>古代の祭壇を調べる</strong> (宝物: ${gameState.treasures.length}/4)`;
       }
@@ -270,7 +280,7 @@ function main() {
     // 2. 拾えるアイテムの近く
     let nearbyItem = null;
     world.pickables.forEach(item => {
-      if (!item.isCollected && pPos.distanceTo(item.pos) < 2.0) {
+      if (!item.isCollected && player.group.position.distanceTo(item.pos) < 2.2) {
         nearbyItem = item;
       }
     });
@@ -292,16 +302,18 @@ function main() {
   }
 
   // プロンプト自体をクリック/タップしてもインタラクト実行
-  ui.interactPrompt.onclick = () => {
+  ui.interactPrompt.onclick = (e) => {
+    e.stopPropagation();
     islandAudio.init();
+    gameState.checkAltarInteraction(true);
     checkInteractions();
   };
 
   function checkInteractions() {
-    // 1. 祭壇の確認 (半径5.0m以内)
-    const altarDist = player.group.position.distanceTo(new THREE.Vector3(0, 1.4, 0));
-    if (altarDist < 5.0) {
-      gameState.checkAltarInteraction();
+    // 1. 祭壇の確認 (水平距離4.0m以内なら強制実行)
+    const horizontalDist = Math.hypot(player.group.position.x, player.group.position.z);
+    if (horizontalDist < 4.0) {
+      gameState.checkAltarInteraction(true);
       return;
     }
 
