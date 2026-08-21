@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import kamomeUrl from '../public/models/kamome.glb?url';
 
 // ========================================================
 // Player & Island Resident NPCs (3D Low-poly Models & Emotes)
@@ -238,13 +240,9 @@ export function createIslandNPCs(scene) {
     fallbackMesh.add(beak);
     group.add(fallbackMesh);
 
-    // モデルパス (BASE_URL対応)
-    const baseUrl = import.meta.env.BASE_URL || './';
-    const modelUrl = `${baseUrl.endsWith('/') ? baseUrl : baseUrl + '/'}models/kamome.glb`;
-
-    // Blenderカスタムモデルのロード
+    // Blenderカスタムモデルのロード (Viteで解決されたURL)
     gltfLoader.load(
-      modelUrl,
+      kamomeUrl,
       (gltf) => {
         try {
           const model = gltf.scene;

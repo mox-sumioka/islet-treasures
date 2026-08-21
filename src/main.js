@@ -189,30 +189,31 @@ class UIManager {
 // Main Application Setup
 // ========================================================
 function main() {
-  const container = document.getElementById('game-container');
+  try {
+    const container = document.getElementById('game-container');
 
-  // 1. Scene, Camera, Renderer
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xa8dadc);
-  scene.fog = new THREE.FogExp2(0xa8dadc, 0.025);
+    // 1. Scene, Camera, Renderer
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0xa8dadc);
+    scene.fog = new THREE.FogExp2(0xa8dadc, 0.025);
 
-  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-  camera.position.set(0, 12, 16);
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 12, 16);
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  container.appendChild(renderer.domElement);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    container.appendChild(renderer.domElement);
 
-  // 2. Game Entities
-  const world = new IslandWorld(scene);
-  const player = new PlayerCharacter(scene);
-  const npcs = createIslandNPCs(scene);
-  const ui = new UIManager();
-  const gameState = new GameStateManager(player, npcs, world, ui);
-  ui.setGameState(gameState);
+    // 2. Game Entities
+    const world = new IslandWorld(scene);
+    const player = new PlayerCharacter(scene);
+    const npcs = createIslandNPCs(scene);
+    const ui = new UIManager();
+    const gameState = new GameStateManager(player, npcs, world, ui);
+    ui.setGameState(gameState);
 
   // 3. Controls & Inputs (Keyboard & Touch Joystick)
   const keys = {};
@@ -448,7 +449,20 @@ function main() {
     renderer.render(scene, camera);
   }
 
-  loop();
+    loop();
+  } catch (err) {
+    console.error('Fatal initialization error:', err);
+    const errDiv = document.createElement('div');
+    errDiv.style.position = 'absolute';
+    errDiv.style.top = '10px';
+    errDiv.style.left = '10px';
+    errDiv.style.color = 'red';
+    errDiv.style.background = 'rgba(0,0,0,0.8)';
+    errDiv.style.padding = '10px';
+    errDiv.style.zIndex = '9999';
+    errDiv.textContent = `エラー: ${err.message}`;
+    document.body.appendChild(errDiv);
+  }
 }
 
-window.addEventListener('DOMContentLoaded', main);
+main();
