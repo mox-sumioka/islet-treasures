@@ -145,26 +145,26 @@ export class PlayerCharacter {
 }
 
 // ========================================================
-// NPC Resident Class
+// Resident NPC Class (クマ、カモメ、カニ、影)
 // ========================================================
-
 export class ResidentNPC {
-  constructor(id, name, pos, scene, buildFunc) {
+  constructor(id, name, pos, scene, meshBuilder) {
     this.id = id;
     this.name = name;
     this.pos = pos.clone();
-    this.scene = scene;
     this.group = new THREE.Group();
-    this.group.position.copy(pos);
+    this.group.position.copy(this.pos);
+    this.scene = scene;
+    this.mixer = null;
 
-    this.bubbleState = 'idle'; // 'idle', 'happy', 'angry', 'thinking', 'request'
-    this.bubbleEmoji = '❓';
+    if (meshBuilder) {
+      meshBuilder(this.group, this);
+    }
+    this.scene.add(this.group);
     this.bubbleTimer = 0;
 
     this.isSatisfied = false;
     this.hasGivenTreasure = false;
-
-    buildFunc(this.group);
     this.scene.add(this.group);
   }
 
@@ -178,6 +178,10 @@ export class ResidentNPC {
       this.bubbleTimer -= delta;
     }
 
+    if (this.mixer) {
+      this.mixer.update(delta);
+    }
+
     // のんびり呼吸・揺れアニメーション
     this.group.position.y = this.pos.y + Math.sin(time * 2 + this.pos.x) * 0.06;
   }
@@ -189,6 +193,7 @@ export class ResidentNPC {
 
 export function createIslandNPCs(scene) {
   const npcs = [];
+  const gltfLoader = new GLTFLoader();
 
   // 1. 🐻 森のクマモドキ (Bear)
   const bear = new ResidentNPC('bear', '森のクマモドキ', new THREE.Vector3(-4.5, 1.4, 2.5), scene, (group) => {
@@ -215,28 +220,53 @@ export function createIslandNPCs(scene) {
   });
   npcs.push(bear);
 
-  // 2. 🕊️ 灯台のカモメ爺さん (Gull)
-  const gull = new ResidentNPC('gull', '灯台のカモメ爺さん', new THREE.Vector3(5.5, 1.4, -3.2), scene, (group) => {
-    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8, flatShading: true });
-    const beakMat = new THREE.MeshStandardMaterial({ color: 0xf4a261, roughness: 0.5, flatShading: true });
+  // 2. 🕊️ 灯台のカモメ爺さん (Gull) - ユーザーのオリジナルBlenderモデル (kamome.glb)
+  const gull = new ResidentNPC('gull', '灯台のカモメ爺さん', new THREE.Vector3(5.5, 1.4, -3.2), scene, (group, npcInstance) => {
+    // Blenderカスタムモデルのロード
+    gltfLoader.load(
+      './models/kamome.glb',
+      (gltf) => {
+        const model = gltf.scene;
 
-    // 丸い胴体
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.38, 8, 8), whiteMat);
-    body.position.y = 0.45;
-    body.castShadow = true;
-    group.add(body);
+        // モデルのバウンディングボックスを計算して適切なサイズに自動スケール
+        const box = new THREE.Box3().setFromObject(model);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const targetSize = 1.0; // カモメの目標サイズ
+        const scaleFactor = targetSize / (maxDim || 1.0);
 
-    // クチバシ
-    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.35, 6), beakMat);
-    beak.rotation.x = Math.PI / 2;
-    beak.position.set(0, 0.48, 0.45);
-    group.add(beak);
+        model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+        model.position.set(0, 0, 0);
 
-    // 白髭 (爺さん)
-    const beard = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.3, 6), new THREE.MeshStandardMaterial({ color: 0xdddddd }));
-    beard.rotation.x = Math.PI;
-    beard.position.set(0, 0.25, 0.35);
-    group.add(beard);
+        model.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            if (child.material) {
+              child.material.roughness = 0.6;
+            }
+          }
+        });
+
+        group.add(model);
+
+        // アニメーションがある場合は再生
+        if (gltf.animations && gltf.animations.length > 0) {
+          npcInstance.mixer = new THREE.AnimationMixer(model);
+          const action = npcInstance.mixer.clipAction(gltf.animations[0]);
+          action.play();
+        }
+      },
+      undefined,
+      (error) => {
+        console.warn('Fallback to procedural gull due to load error:', error);
+        // フォールバック用の手作りカモメ
+        const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
+        const body = new THREE.Mesh(new THREE.SphereGeometry(0.38, 8, 8), whiteMat);
+        body.position.y = 0.45;
+        group.add(body);
+      }
+    );
   });
   npcs.push(gull);
 
