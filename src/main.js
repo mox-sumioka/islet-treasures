@@ -299,7 +299,14 @@ function main() {
   };
 
   function checkInteractions() {
-    // 1. 近くの拾えるアイテム
+    // 1. 祭壇の確認 (4つの宝物があれば即座に奉納)
+    const altarDist = player.group.position.distanceTo(new THREE.Vector3(0, 1.4, 0));
+    if (altarDist < 4.5) {
+      gameState.checkAltarInteraction();
+      return;
+    }
+
+    // 2. 近くの拾えるアイテム
     world.pickables.forEach(item => {
       if (!item.isCollected) {
         const dist = player.group.position.distanceTo(item.pos);
@@ -308,9 +315,6 @@ function main() {
         }
       }
     });
-
-    // 2. 祭壇の確認
-    gameState.checkAltarInteraction();
   }
 
   // 4. Window Resize

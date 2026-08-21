@@ -106,15 +106,19 @@ export class GameStateManager {
     else if (npc.id === 'gull') {
       if (emoteType === 'bow') {
         prog.bowed = true;
-        npc.showBubble('👏'); // 拍手を待つ
-        islandAudio.playNPCVoice('gull', true);
-      } else if (emoteType === 'clap') {
-        if (prog.bowed) {
-          prog.clapped = true;
+        if (prog.clapped) {
           this.awardTreasure('telescope', npc);
         } else {
-          npc.showBubble('🙇'); // 先におじぎをしてほしい
-          islandAudio.playNPCVoice('gull', false);
+          npc.showBubble('👏'); // 拍手を待つ
+          islandAudio.playNPCVoice('gull', true);
+        }
+      } else if (emoteType === 'clap') {
+        prog.clapped = true;
+        if (prog.bowed) {
+          this.awardTreasure('telescope', npc);
+        } else {
+          npc.showBubble('🙇'); // おじぎを待つ
+          islandAudio.playNPCVoice('gull', true);
         }
       } else {
         npc.showBubble('❓');
@@ -126,10 +130,15 @@ export class GameStateManager {
     else if (npc.id === 'crab') {
       if (emoteType === 'dance') {
         prog.danced = true;
-        npc.showBubble('🐚'); // 桜貝が欲しい
-        islandAudio.playNPCVoice('crab', true);
+        if (prog.gifted) {
+          // 既に貝殻を渡している場合は即座に宝物を渡す！
+          this.awardTreasure('glass_ball', npc);
+        } else {
+          npc.showBubble('🐚'); // 桜貝が欲しい
+          islandAudio.playNPCVoice('crab', true);
+        }
       } else {
-        npc.showBubble('💢');
+        npc.showBubble('❓');
         islandAudio.playNPCVoice('crab', false);
       }
     }
@@ -137,15 +146,14 @@ export class GameStateManager {
     // --- 👤 影ぼうしのリアクション ---
     else if (npc.id === 'shadow') {
       if (emoteType === 'think') {
-        // 他の3つの宝物を持っているか？
         if (this.treasures.length >= 3) {
           this.awardTreasure('music_box', npc);
         } else {
-          npc.showBubble('🔒'); // まだ宝物が足りない
+          npc.showBubble('🔒');
           islandAudio.playNPCVoice('shadow', false);
         }
       } else {
-        npc.showBubble('……');
+        npc.showBubble('❓');
         islandAudio.playNPCVoice('shadow', false);
       }
     }
@@ -167,11 +175,12 @@ export class GameStateManager {
       if (itemId === 'berry') {
         prog.fed = true;
         this.removeItem(itemId);
-        npc.showBubble('👋'); // 手を振ってほしい
-        islandAudio.playNPCVoice('bear', true);
         this.ui.showToast('🐻 クマモドキは木の実を美味しそうに食べた！');
         if (prog.waved) {
           this.awardTreasure('star_stone', npc);
+        } else {
+          npc.showBubble('👋'); // 手を振ってほしい
+          islandAudio.playNPCVoice('bear', true);
         }
       } else {
         npc.showBubble('💢');
@@ -185,11 +194,13 @@ export class GameStateManager {
       if (itemId === 'shell') {
         prog.gifted = true;
         this.removeItem(itemId);
-        npc.showBubble('💃');
-        islandAudio.playNPCVoice('crab', true);
         this.ui.showToast('🦀 カニ坊やは桜貝を受け取って大喜び！');
         if (prog.danced) {
+          // 既に踊っていた場合は即座に宝物を渡す！
           this.awardTreasure('glass_ball', npc);
+        } else {
+          npc.showBubble('💃'); // 一緒に踊ってほしい
+          islandAudio.playNPCVoice('crab', true);
         }
       } else {
         npc.showBubble('❓');
@@ -215,7 +226,7 @@ export class GameStateManager {
 
     islandAudio.playNPCVoice(npc.id, true);
     islandAudio.playTreasureFanfare();
-    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+    confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
 
     const def = TREASURES_DEF.find(t => t.id === treasureId);
     this.ui.showToast(`🎉 【${def.name}】を分けてもらった！手帳に記憶が蘇る…`);
@@ -225,7 +236,7 @@ export class GameStateManager {
     if (this.treasures.length === 4) {
       setTimeout(() => {
         this.ui.showToast('🌟 4つの宝物が揃った！島の中央の祭壇へ向かおう…');
-      }, 3500);
+      }, 3000);
     }
   }
 
@@ -234,11 +245,9 @@ export class GameStateManager {
     const altarPos = new THREE.Vector3(0, 1.4, 0);
     const dist = this.player.group.position.distanceTo(altarPos);
 
-    if (dist < 3.8) {
+    if (dist < 4.5) {
       if (this.treasures.length === 4) {
-        if (!this.isEndingTriggered) {
-          this.triggerEnding();
-        }
+        this.triggerEnding();
       } else {
         this.ui.showToast(`🏛️ 古代の祭壇：宝物を4つ捧げると封印が解けるらしい (現在 ${this.treasures.length}/4)`);
       }
@@ -246,6 +255,7 @@ export class GameStateManager {
   }
 
   triggerEnding() {
+    if (this.isEndingTriggered) return;
     this.isEndingTriggered = true;
 
     // 1. 祭壇の台座に4つの宝物を光らせて配置
@@ -254,13 +264,14 @@ export class GameStateManager {
     }
 
     // 2. お祝いファンファーレ & 紙吹雪
-    confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
+    confetti({ particleCount: 250, spread: 120, origin: { y: 0.5 } });
     islandAudio.playTreasureFanfare();
+    this.ui.showToast('🌟 祭壇の封印が解かれた！島の記憶がひとつになる…');
 
     // 3. エンディングモーダル表示
     setTimeout(() => {
       this.ui.showEndingModal();
-    }, 1200);
+    }, 1500);
   }
 
   removeItem(itemId) {
