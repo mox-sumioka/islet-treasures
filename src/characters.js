@@ -187,8 +187,12 @@ export class ResidentNPC {
       }
     }
 
-    // のんびり呼吸・揺れアニメーション
-    this.group.position.y = this.pos.y + Math.sin(time * 2 + this.pos.x) * 0.06;
+    // カモメ爺さん(gull)以外はのんびり呼吸・揺れアニメーション
+    if (this.id !== 'gull') {
+      this.group.position.y = this.pos.y + Math.sin(time * 2 + this.pos.x) * 0.06;
+    } else {
+      this.group.position.y = this.pos.y;
+    }
   }
 }
 
@@ -230,28 +234,28 @@ export function createIslandNPCs(scene) {
     // まず仮のプレースホルダーを配置して即座に画面に表示されるようにする
     const fallbackMesh = new THREE.Group();
     const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.38, 8, 8), whiteMat);
-    body.position.y = 0.45;
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.45, 8, 8), whiteMat);
+    body.position.y = 0.5;
     fallbackMesh.add(body);
 
-    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.35, 6), new THREE.MeshStandardMaterial({ color: 0xf4a261 }));
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.4, 6), new THREE.MeshStandardMaterial({ color: 0xf4a261 }));
     beak.rotation.x = Math.PI / 2;
-    beak.position.set(0, 0.48, 0.45);
+    beak.position.set(0, 0.55, 0.5);
     fallbackMesh.add(beak);
     group.add(fallbackMesh);
 
-    // Blenderカスタムモデルのロード (Viteで解決されたURL)
+    // Blenderカスタムモデルのロード (1.5倍サイズ)
     gltfLoader.load(
       kamomeUrl,
       (gltf) => {
         try {
           const model = gltf.scene;
 
-          // モデルのバウンディングボックスを計算して適切なサイズに自動スケール
+          // モデルのバウンディングボックスを計算して1.5倍サイズにスケール
           const box = new THREE.Box3().setFromObject(model);
           const size = box.getSize(new THREE.Vector3());
           const maxDim = Math.max(size.x, size.y, size.z);
-          const targetSize = 1.0; // カモメの目標サイズ
+          const targetSize = 1.5; // 1.5倍に拡大！
           const scaleFactor = targetSize / (maxDim || 1.0);
 
           model.scale.set(scaleFactor, scaleFactor, scaleFactor);
