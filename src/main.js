@@ -292,10 +292,14 @@ function main() {
     world.update(delta, elapsedTime);
     npcs.forEach(npc => npc.update(delta, elapsedTime));
 
-    // Smooth Camera Follow (Isometric Angle)
-    const targetCamPos = player.group.position.clone().add(new THREE.Vector3(0, 8.5, 11));
-    camera.position.lerp(targetCamPos, delta * 4.0);
-    camera.lookAt(player.group.position.clone().add(new THREE.Vector3(0, 1.2, 0)));
+    // Smooth Camera Follow (完全にブレのない滑らかなクォータービュー追従)
+    const targetCamPos = new THREE.Vector3(
+      player.group.position.x,
+      9.9, // 1.4 (地面) + 8.5 (カメラ高さ) で固定
+      player.group.position.z + 11
+    );
+    camera.position.lerp(targetCamPos, delta * 5.0);
+    camera.lookAt(new THREE.Vector3(player.group.position.x, 1.4, player.group.position.z));
 
     // 3D Speech Bubble Projection to 2D HUD
     ui.updateNPCBubbles(npcs, camera, window.innerWidth, window.innerHeight);

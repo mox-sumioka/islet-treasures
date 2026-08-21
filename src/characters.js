@@ -121,13 +121,15 @@ export class PlayerCharacter {
       const angle = Math.atan2(this.moveDir.x, this.moveDir.z);
       this.group.rotation.y = THREE.MathUtils.lerp(this.group.rotation.y, angle, delta * 12);
 
-      // 歩行ボビング
+      // 歩行アニメーション (カメラを揺らさないよう手足と体のみ動かす)
       this.walkCycle += delta * 10;
-      this.group.position.y = 1.4 + Math.abs(Math.sin(this.walkCycle)) * 0.12;
+      this.bodyMesh.position.y = 0.5 + Math.abs(Math.sin(this.walkCycle)) * 0.05;
+      this.headMesh.position.y = 0.95 + Math.abs(Math.sin(this.walkCycle)) * 0.05;
       this.leftArm.rotation.x = Math.sin(this.walkCycle) * 0.6;
       this.rightArm.rotation.x = -Math.sin(this.walkCycle) * 0.6;
     } else {
-      this.group.position.y = 1.4;
+      this.bodyMesh.position.y = 0.5;
+      this.headMesh.position.y = 0.95;
       this.leftArm.rotation.x = 0;
       this.rightArm.rotation.x = 0;
     }
