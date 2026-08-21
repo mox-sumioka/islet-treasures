@@ -230,29 +230,55 @@ export function createIslandNPCs(scene) {
   });
   npcs.push(gull);
 
-  // 3. 🦀 浜辺のカニ坊や (Crab) - 桟橋すぐ右手の浜辺 (x: 4.5, z: 6.5)
-  const crab = new ResidentNPC('crab', '浜辺のカニ坊や', new THREE.Vector3(4.5, 0.5, 6.5), scene, (group) => {
-    const redMat = new THREE.MeshStandardMaterial({ color: 0xe76f51, roughness: 0.6, flatShading: true });
+  // 3. 🦀 浜辺のカニ坊や (Crab) - 桟橋すぐ右手の見晴らしの良い砂浜 (x: 3.5, y: 1.1, z: 5.5)
+  const crab = new ResidentNPC('crab', '浜辺のカニ坊や', new THREE.Vector3(3.5, 1.1, 5.5), scene, (group) => {
+    const redMat = new THREE.MeshStandardMaterial({ color: 0xff3333, roughness: 0.4, flatShading: true });
+    const legMat = new THREE.MeshStandardMaterial({ color: 0xcc2222, roughness: 0.5, flatShading: true });
 
-    // 少し大きめの甲羅
-    const shell = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.52, 0.26, 8), redMat);
-    shell.position.y = 0.2;
+    // 鮮やかな赤い甲羅
+    const shell = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 0.3, 8), redMat);
+    shell.position.y = 0.25;
     shell.castShadow = true;
     group.add(shell);
 
-    // ハサミ (Claws)
-    [-0.55, 0.55].forEach((cx, idx) => {
-      const claw = new THREE.Mesh(new THREE.SphereGeometry(0.2, 6, 6), redMat);
-      claw.scale.set(1.4, 1, 0.6);
-      claw.position.set(cx, 0.38, 0.25);
+    // 大きなハサミ (Claws)
+    [-0.65, 0.65].forEach((cx, idx) => {
+      const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.3, 6), legMat);
+      arm.rotation.z = idx === 0 ? 0.8 : -0.8;
+      arm.position.set(cx * 0.6, 0.35, 0.2);
+      group.add(arm);
+
+      const claw = new THREE.Mesh(new THREE.SphereGeometry(0.24, 6, 6), redMat);
+      claw.scale.set(1.4, 1.2, 0.7);
+      claw.position.set(cx, 0.48, 0.35);
+      claw.castShadow = true;
       group.add(claw);
     });
 
-    // 飛び出ためだま
-    [-0.18, 0.18].forEach(ex => {
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), new THREE.MeshBasicMaterial({ color: 0x000000 }));
-      eye.position.set(ex, 0.48, 0.35);
+    // カニの足 (Legs)
+    [-0.45, 0.45].forEach((lx, idx) => {
+      [-0.15, 0.05, 0.25].forEach(lz => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.35, 4), legMat);
+        leg.rotation.z = idx === 0 ? 0.9 : -0.9;
+        leg.position.set(lx, 0.12, lz);
+        group.add(leg);
+      });
+    });
+
+    // 飛び出ためだま (大きなクリクリ目)
+    [-0.2, 0.2].forEach(ex => {
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.2, 6), redMat);
+      stem.position.set(ex, 0.45, 0.35);
+      group.add(stem);
+
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), new THREE.MeshBasicMaterial({ color: 0x000000 }));
+      eye.position.set(ex, 0.56, 0.38);
       group.add(eye);
+
+      // 白目のハイライト
+      const dot = new THREE.Mesh(new THREE.SphereGeometry(0.04, 4, 4), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      dot.position.set(ex - 0.03, 0.6, 0.46);
+      group.add(dot);
     });
   });
   npcs.push(crab);
