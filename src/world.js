@@ -284,14 +284,6 @@ export class IslandWorld {
     this.altarCircle.rotation.x = -Math.PI / 2;
     this.altarCircle.position.set(0, 1.45, 0);
     this.scene.add(this.altarCircle);
-  }
-
-  showAltarGuideBeam() {
-    if (this.altarBeam && this.altarCircle) {
-      this.altarBeam.material.opacity = 0.45;
-      this.altarCircle.material.opacity = 0.8;
-    }
-  }
 
     // 3. 古井戸 (Ancient Well) - 西側 (x: -4.5, z: -2.5)
     const well = new THREE.Group();
@@ -310,6 +302,13 @@ export class IslandWorld {
     well.add(wellLight);
 
     this.scene.add(well);
+  }
+
+  showAltarGuideBeam() {
+    if (this.altarBeam && this.altarCircle) {
+      this.altarBeam.material.opacity = 0.45;
+      this.altarCircle.material.opacity = 0.8;
+    }
   }
 
   placeTreasuresOnAltar() {
