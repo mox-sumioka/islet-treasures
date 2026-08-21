@@ -259,6 +259,24 @@ export class IslandWorld {
     });
 
     this.scene.add(altar);
+
+    // 3. 古井戸 (Ancient Well) - 西側 (x: -4.5, z: -2.5)
+    const well = new THREE.Group();
+    well.position.set(-4.5, 1.4, -2.5);
+
+    const wellRing = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.9, 0.9, 0.7, 8, 1, true),
+      new THREE.MeshStandardMaterial({ color: 0x5c4d3c, roughness: 0.9, flatShading: true, side: THREE.DoubleSide })
+    );
+    wellRing.position.y = 0.35;
+    well.add(wellRing);
+
+    // 不気味な紫の光
+    const wellLight = new THREE.PointLight(0x9d4edd, 2.2, 5);
+    wellLight.position.set(0, 0.3, 0);
+    well.add(wellLight);
+
+    this.scene.add(well);
   }
 
   placeTreasuresOnAltar() {
@@ -282,25 +300,6 @@ export class IslandWorld {
       pLight.position.set(0, 0.6, 0);
       pillar.add(pLight);
     });
-  }
-
-  // 3. 古井戸 (Ancient Well) - 西側 (x: -4.5, z: -2.5)
-    const well = new THREE.Group();
-    well.position.set(-4.5, 1.4, -2.5);
-
-    const wellRing = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.9, 0.9, 0.7, 8, 1, true),
-      new THREE.MeshStandardMaterial({ color: 0x5c4d3c, roughness: 0.9, flatShading: true, side: THREE.DoubleSide })
-    );
-    wellRing.position.y = 0.35;
-    well.add(wellRing);
-
-    // 不気味な紫の光
-    const wellLight = new THREE.PointLight(0x9d4edd, 2.2, 5);
-    wellLight.position.set(0, 0.3, 0);
-    well.add(wellLight);
-
-    this.scene.add(well);
   }
 
   spawnPickableItems() {
