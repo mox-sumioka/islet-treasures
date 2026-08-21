@@ -91,17 +91,42 @@ export class IslandWorld {
     grass.receiveShadow = true;
     this.scene.add(grass);
 
-    // 中央の高台 (丘)
-    const hillGeo = new THREE.ConeGeometry(5, 2.0, 12);
+    // 中央の高台 (なだらかな丘)
+    const hillGeo = new THREE.CylinderGeometry(2.0, 4.8, 0.8, 16);
     const hillMat = new THREE.MeshStandardMaterial({
       color: 0x7fa95b,
       roughness: 0.9,
       flatShading: true,
     });
     const hill = new THREE.Mesh(hillGeo, hillMat);
-    hill.position.set(-2, 1.8, -2);
+    hill.position.set(-2, 1.6, -2);
     hill.receiveShadow = true;
     this.scene.add(hill);
+  }
+
+  // 座標(x, z)に応じた地面の高さを返す
+  getGroundHeight(x, z) {
+    const distFromCenter = Math.sqrt(x * x + z * z);
+    
+    // 桟橋
+    if (Math.abs(x) < 1.2 && z > 11.0) {
+      return 1.4;
+    }
+
+    // 丘の上の判定 (中心: -2, -2, 半径: 4.5)
+    const hillDist = Math.sqrt((x + 2) * (x + 2) + (z + 2) * (z + 2));
+    if (hillDist < 4.5) {
+      const hillFactor = Math.max(0, 1.0 - hillDist / 4.5);
+      return 1.4 + hillFactor * 0.8;
+    }
+
+    // 草地
+    if (distFromCenter < 10.0) {
+      return 1.4;
+    }
+
+    // 砂浜
+    return 1.05;
   }
 
   buildDecorations() {
@@ -234,8 +259,32 @@ export class IslandWorld {
     });
 
     this.scene.add(altar);
+  }
 
-    // 3. 古井戸 (Ancient Well) - 西側 (x: -4.5, z: -2.5)
+  placeTreasuresOnAltar() {
+    const emojis = ['🌟', '🔭', '🔮', '📻'];
+    const colors = [0xffd166, 0xf4a261, 0x48cae4, 0x9d4edd];
+    
+    this.altarPillars.forEach((pillar, idx) => {
+      const geo = new THREE.DodecahedronGeometry(0.2);
+      const mat = new THREE.MeshStandardMaterial({
+        color: colors[idx],
+        emissive: colors[idx],
+        emissiveIntensity: 0.8,
+        roughness: 0.2
+      });
+      const tMesh = new THREE.Mesh(geo, mat);
+      tMesh.position.set(0, 0.55, 0);
+      pillar.add(tMesh);
+
+      // 台座の光
+      const pLight = new THREE.PointLight(colors[idx], 1.5, 4);
+      pLight.position.set(0, 0.6, 0);
+      pillar.add(pLight);
+    });
+  }
+
+  // 3. 古井戸 (Ancient Well) - 西側 (x: -4.5, z: -2.5)
     const well = new THREE.Group();
     well.position.set(-4.5, 1.4, -2.5);
 

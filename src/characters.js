@@ -73,11 +73,13 @@ export class PlayerCharacter {
     this.emoteTimer = 1.5;
   }
 
-  update(delta, inputDir) {
+  update(delta, inputDir, world) {
     // 1. エモートアニメーション
     if (this.emoteTimer > 0) {
       this.emoteTimer -= delta;
       const t = Date.now() / 150;
+
+      const groundY = world ? world.getGroundHeight(this.group.position.x, this.group.position.z) : 1.4;
 
       if (this.currentEmote === 'wave') {
         this.rightArm.position.y = 0.85;
@@ -86,13 +88,13 @@ export class PlayerCharacter {
         this.bodyMesh.rotation.x = 0.5;
         this.headMesh.position.z = 0.15;
       } else if (this.currentEmote === 'dance') {
-        this.group.position.y = 1.4 + Math.abs(Math.sin(t * 1.5)) * 0.3;
+        this.group.position.y = groundY + Math.abs(Math.sin(t * 1.5)) * 0.3;
         this.group.rotation.y += delta * 6;
       } else if (this.currentEmote === 'clap') {
         this.leftArm.rotation.z = 0.8;
         this.rightArm.rotation.z = -0.8;
       } else if (this.currentEmote === 'surprise') {
-        this.group.position.y = 1.4 + Math.abs(Math.sin(t * 3)) * 0.4;
+        this.group.position.y = groundY + Math.abs(Math.sin(t * 3)) * 0.4;
       }
       return;
     }
@@ -117,6 +119,10 @@ export class PlayerCharacter {
         this.group.position.copy(nextPos);
       }
 
+      // 地形の高さに滑らかに追従 (丘や砂浜で埋まらない)
+      const groundY = world ? world.getGroundHeight(this.group.position.x, this.group.position.z) : 1.4;
+      this.group.position.y = groundY;
+
       // 進行方向を向く
       const angle = Math.atan2(this.moveDir.x, this.moveDir.z);
       this.group.rotation.y = THREE.MathUtils.lerp(this.group.rotation.y, angle, delta * 12);
@@ -128,6 +134,8 @@ export class PlayerCharacter {
       this.leftArm.rotation.x = Math.sin(this.walkCycle) * 0.6;
       this.rightArm.rotation.x = -Math.sin(this.walkCycle) * 0.6;
     } else {
+      const groundY = world ? world.getGroundHeight(this.group.position.x, this.group.position.z) : 1.4;
+      this.group.position.y = groundY;
       this.bodyMesh.position.y = 0.5;
       this.headMesh.position.y = 0.95;
       this.leftArm.rotation.x = 0;

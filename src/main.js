@@ -251,12 +251,59 @@ function main() {
     }
   });
 
+  // 毎フレームのインタラクトプロンプト自動更新
+  function updateProximityPrompts() {
+    const pPos = player.group.position;
+
+    // 1. 祭壇の近く
+    const altarDist = pPos.distanceTo(new THREE.Vector3(0, 1.4, 0));
+    if (altarDist < 3.8) {
+      if (gameState.treasures.length === 4) {
+        ui.promptText.innerHTML = '🌟 <strong>4つの宝物を祭壇に捧げる</strong> (封印解除)';
+        ui.interactPrompt.classList.remove('prompt-hidden');
+      } else {
+        ui.promptText.textContent = `🏛️ 古代の祭壇 (宝物: ${gameState.treasures.length}/4)`;
+        ui.interactPrompt.classList.remove('prompt-hidden');
+      }
+      return;
+    }
+
+    // 2. 拾えるアイテムの近く
+    let nearbyItem = null;
+    world.pickables.forEach(item => {
+      if (!item.isCollected && pPos.distanceTo(item.pos) < 2.0) {
+        nearbyItem = item;
+      }
+    });
+    if (nearbyItem) {
+      ui.promptText.textContent = `✨ 【${nearbyItem.name}】を拾う`;
+      ui.interactPrompt.classList.remove('prompt-hidden');
+      return;
+    }
+
+    // 3. 住人NPCの近く
+    const nearbyNPC = gameState.findNearestNPC(3.0);
+    if (nearbyNPC) {
+      ui.promptText.textContent = `💬 ${nearbyNPC.name} にエモートかアイテムを渡そう`;
+      ui.interactPrompt.classList.remove('prompt-hidden');
+      return;
+    }
+
+    ui.interactPrompt.classList.add('prompt-hidden');
+  }
+
+  // プロンプト自体をクリック/タップしてもインタラクト実行
+  ui.interactPrompt.onclick = () => {
+    islandAudio.init();
+    checkInteractions();
+  };
+
   function checkInteractions() {
     // 1. 近くの拾えるアイテム
     world.pickables.forEach(item => {
       if (!item.isCollected) {
         const dist = player.group.position.distanceTo(item.pos);
-        if (dist < 1.8) {
+        if (dist < 2.2) {
           gameState.pickupItem(item);
         }
       }
@@ -288,9 +335,12 @@ function main() {
     if (keys['KeyA'] || keys['ArrowLeft']) inputDir.x -= 1;
     if (keys['KeyD'] || keys['ArrowRight']) inputDir.x += 1;
 
-    player.update(delta, inputDir);
+    player.update(delta, inputDir, world);
     world.update(delta, elapsedTime);
     npcs.forEach(npc => npc.update(delta, elapsedTime));
+
+    // 近接プロンプト更新
+    updateProximityPrompts();
 
     // Smooth Camera Follow (完全にブレのない滑らかなクォータービュー追従)
     const targetCamPos = new THREE.Vector3(

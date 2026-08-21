@@ -234,21 +234,33 @@ export class GameStateManager {
     const altarPos = new THREE.Vector3(0, 1.4, 0);
     const dist = this.player.group.position.distanceTo(altarPos);
 
-    if (dist < 3.0) {
-      if (this.treasures.length === 4 && !this.isEndingTriggered) {
-        this.triggerEnding();
+    if (dist < 3.8) {
+      if (this.treasures.length === 4) {
+        if (!this.isEndingTriggered) {
+          this.triggerEnding();
+        }
       } else {
-        this.ui.showToast(`🏛️ 古代の祭壇：宝物を4つ捧げると封印が解けるらしい (${this.treasures.length}/4)`);
+        this.ui.showToast(`🏛️ 古代の祭壇：宝物を4つ捧げると封印が解けるらしい (現在 ${this.treasures.length}/4)`);
       }
     }
   }
 
   triggerEnding() {
     this.isEndingTriggered = true;
+
+    // 1. 祭壇の台座に4つの宝物を光らせて配置
+    if (this.world.placeTreasuresOnAltar) {
+      this.world.placeTreasuresOnAltar();
+    }
+
+    // 2. お祝いファンファーレ & 紙吹雪
     confetti({ particleCount: 200, spread: 100, origin: { y: 0.5 } });
     islandAudio.playTreasureFanfare();
 
-    this.ui.showEndingModal();
+    // 3. エンディングモーダル表示
+    setTimeout(() => {
+      this.ui.showEndingModal();
+    }, 1200);
   }
 
   removeItem(itemId) {
