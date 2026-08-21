@@ -145,16 +145,13 @@ export class GameStateManager {
 
     // --- 👤 影ぼうしのリアクション ---
     else if (npc.id === 'shadow') {
-      if (emoteType === 'think') {
-        if (this.treasures.length >= 3) {
-          this.awardTreasure('music_box', npc);
-        } else {
-          npc.showBubble('🔒');
-          islandAudio.playNPCVoice('shadow', false);
-        }
+      // どんなエモートでも、3つの宝物があれば4つ目のオルゴールを渡す！
+      if (this.treasures.length >= 3) {
+        this.awardTreasure('music_box', npc);
       } else {
-        npc.showBubble('❓');
+        npc.showBubble('🔒');
         islandAudio.playNPCVoice('shadow', false);
+        this.ui.showToast(`👤 影ぼうし「まだ宝物が足りないようだ… (現在 ${this.treasures.length}/3)」`);
       }
     }
   }
@@ -169,6 +166,17 @@ export class GameStateManager {
 
     const npc = nearestNPC;
     const prog = this.npcProgress[npc.id];
+
+    // 👤 影ぼうしに話しかけた時
+    if (npc.id === 'shadow') {
+      if (this.treasures.length >= 3) {
+        this.awardTreasure('music_box', npc);
+      } else {
+        npc.showBubble('🔒');
+        this.ui.showToast(`👤 影ぼうし「他の3人の住人から宝物を集めてくるのだ… (現在 ${this.treasures.length}/3)」`);
+      }
+      return;
+    }
 
     // 🐻 クマに木の実
     if (npc.id === 'bear') {
@@ -196,7 +204,6 @@ export class GameStateManager {
         this.removeItem(itemId);
         this.ui.showToast('🦀 カニ坊やは桜貝を受け取って大喜び！');
         if (prog.danced) {
-          // 既に踊っていた場合は即座に宝物を渡す！
           this.awardTreasure('glass_ball', npc);
         } else {
           npc.showBubble('💃'); // 一緒に踊ってほしい
@@ -208,7 +215,7 @@ export class GameStateManager {
       }
     }
 
-    // 🕊️ カモメや影へのアイテム
+    // 🕊️ カモメへのアイテム
     else {
       npc.showBubble('❓');
       islandAudio.playNPCVoice(npc.id, false);
@@ -229,14 +236,14 @@ export class GameStateManager {
     confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
 
     const def = TREASURES_DEF.find(t => t.id === treasureId);
-    this.ui.showToast(`🎉 【${def.name}】を分けてもらった！手帳に記憶が蘇る…`);
+    this.ui.showToast(`🎉 【${def.name}】を分けてもらった！手帳に記憶が蘇る… (${this.treasures.length}/4)`);
     this.ui.updateTreasureCount(this.treasures.length);
 
     // 4つ集まったら祭壇へ促す
     if (this.treasures.length === 4) {
       setTimeout(() => {
-        this.ui.showToast('🌟 4つの宝物が揃った！島の中央の祭壇へ向かおう…');
-      }, 3000);
+        this.ui.showToast('🌟 4つの宝物がすべて揃った！中央の祭壇へ向かおう！');
+      }, 2500);
     }
   }
 
@@ -245,11 +252,14 @@ export class GameStateManager {
     const altarPos = new THREE.Vector3(0, 1.4, 0);
     const dist = this.player.group.position.distanceTo(altarPos);
 
-    if (dist < 4.5) {
-      if (this.treasures.length === 4) {
+    if (dist < 5.0) {
+      if (this.treasures.length >= 4) {
         this.triggerEnding();
       } else {
-        this.ui.showToast(`🏛️ 古代の祭壇：宝物を4つ捧げると封印が解けるらしい (現在 ${this.treasures.length}/4)`);
+        // 宝物が足りない場合は手帳を開いて状況を見せる
+        this.ui.renderDiary();
+        this.ui.diaryModal.classList.remove('hidden');
+        this.ui.showToast(`🏛️ 祭壇の封印には4つの宝物が必要です (現在 ${this.treasures.length}/4)`);
       }
     }
   }

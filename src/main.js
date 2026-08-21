@@ -255,16 +255,15 @@ function main() {
   function updateProximityPrompts() {
     const pPos = player.group.position;
 
-    // 1. 祭壇の近く
+    // 1. 祭壇の近く (半径5.0m以内)
     const altarDist = pPos.distanceTo(new THREE.Vector3(0, 1.4, 0));
-    if (altarDist < 3.8) {
-      if (gameState.treasures.length === 4) {
-        ui.promptText.innerHTML = '🌟 <strong>4つの宝物を祭壇に捧げる</strong> (封印解除)';
-        ui.interactPrompt.classList.remove('prompt-hidden');
+    if (altarDist < 5.0) {
+      if (gameState.treasures.length >= 4) {
+        ui.promptText.innerHTML = '🌟 <strong>4つの宝物を祭壇に捧げる</strong> (クリックまたは [E])';
       } else {
-        ui.promptText.textContent = `🏛️ 古代の祭壇 (宝物: ${gameState.treasures.length}/4)`;
-        ui.interactPrompt.classList.remove('prompt-hidden');
+        ui.promptText.innerHTML = `🏛️ <strong>古代の祭壇を調べる</strong> (宝物: ${gameState.treasures.length}/4)`;
       }
+      ui.interactPrompt.classList.remove('prompt-hidden');
       return;
     }
 
@@ -276,15 +275,15 @@ function main() {
       }
     });
     if (nearbyItem) {
-      ui.promptText.textContent = `✨ 【${nearbyItem.name}】を拾う`;
+      ui.promptText.innerHTML = `✨ 【${nearbyItem.name}】を拾う ([E] または タップ)`;
       ui.interactPrompt.classList.remove('prompt-hidden');
       return;
     }
 
     // 3. 住人NPCの近く
-    const nearbyNPC = gameState.findNearestNPC(3.0);
+    const nearbyNPC = gameState.findNearestNPC(3.5);
     if (nearbyNPC) {
-      ui.promptText.textContent = `💬 ${nearbyNPC.name} にエモートかアイテムを渡そう`;
+      ui.promptText.innerHTML = `💬 <strong>${nearbyNPC.name}</strong> にエモートやアイテムを渡そう`;
       ui.interactPrompt.classList.remove('prompt-hidden');
       return;
     }
@@ -299,9 +298,9 @@ function main() {
   };
 
   function checkInteractions() {
-    // 1. 祭壇の確認 (4つの宝物があれば即座に奉納)
+    // 1. 祭壇の確認 (半径5.0m以内)
     const altarDist = player.group.position.distanceTo(new THREE.Vector3(0, 1.4, 0));
-    if (altarDist < 4.5) {
+    if (altarDist < 5.0) {
       gameState.checkAltarInteraction();
       return;
     }
