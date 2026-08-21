@@ -214,8 +214,16 @@ function main() {
   const gameState = new GameStateManager(player, npcs, world, ui);
   ui.setGameState(gameState);
 
-  // 3. Controls & Inputs
+  // 3. Controls & Inputs (Keyboard & Touch Joystick)
   const keys = {};
+  const touchInputDir = new THREE.Vector3();
+  let touchId = null;
+  let touchOrigin = { x: 0, y: 0 };
+  const joystickBase = document.getElementById('joystick-base');
+  const joystickKnob = document.getElementById('joystick-knob');
+  const touchControls = document.getElementById('touch-controls');
+
+  // Keyboard Listeners
   window.addEventListener('keydown', (e) => {
     islandAudio.init();
     keys[e.code] = true;
@@ -243,9 +251,77 @@ function main() {
     keys[e.code] = false;
   });
 
-  // クリックでインタラクト
+  // Touch Virtual Joystick Listeners
+  window.addEventListener('touchstart', (e) => {
+    islandAudio.init();
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      const target = touch.target;
+
+      // ボタンやモーダル、インベントリ以外の画面タッチ
+      if (target.tagName !== 'BUTTON' && !target.closest('button') && !target.closest('.modal-overlay') && !target.closest('.inventory-tray') && !target.closest('.emote-bar')) {
+        // 画面左側または下部タッチでジョイスティック開始
+        if (touchId === null) {
+          touchId = touch.identifier;
+          touchOrigin = { x: touch.clientX, y: touch.clientY };
+
+          joystickBase.style.left = `${touchOrigin.x}px`;
+          joystickBase.style.top = `${touchOrigin.y}px`;
+          joystickKnob.style.transform = 'translate(0px, 0px)';
+          touchControls.classList.remove('touch-hidden');
+        } else {
+          // 別の指でタップした時はインタラクト判定
+          checkInteractions();
+        }
+      }
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchmove', (e) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      if (touch.identifier === touchId) {
+        e.preventDefault();
+        const dx = touch.clientX - touchOrigin.x;
+        const dy = touch.clientY - touchOrigin.y;
+        const dist = Math.hypot(dx, dy);
+        const maxRadius = 45;
+
+        const angle = Math.atan2(dy, dx);
+        const clampedDist = Math.min(dist, maxRadius);
+
+        const knobX = Math.cos(angle) * clampedDist;
+        const knobY = Math.sin(angle) * clampedDist;
+        joystickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+
+        // 3D移動ベクトルへ変換 (画面座標のX/Y -> 3DのX/Z)
+        if (dist > 5) {
+          touchInputDir.set(dx / maxRadius, 0, dy / maxRadius);
+          if (touchInputDir.length() > 1.0) touchInputDir.normalize();
+        } else {
+          touchInputDir.set(0, 0, 0);
+        }
+      }
+    }
+  }, { passive: false });
+
+  const endTouch = (e) => {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      if (touch.identifier === touchId) {
+        touchId = null;
+        touchInputDir.set(0, 0, 0);
+        touchControls.classList.add('touch-hidden');
+      }
+    }
+  };
+
+  window.addEventListener('touchend', endTouch);
+  window.addEventListener('touchcancel', endTouch);
+
+  // マウスクリックでのインタラクト
   window.addEventListener('pointerdown', (e) => {
-    if (e.target.tagName !== 'BUTTON' && !e.target.closest('button') && !e.target.closest('.modal-overlay')) {
+    if (e.pointerType === 'mouse' && e.target.tagName !== 'BUTTON' && !e.target.closest('button') && !e.target.closest('.modal-overlay')) {
       islandAudio.init();
       checkInteractions();
     }
@@ -343,12 +419,17 @@ function main() {
     const delta = clock.getDelta();
     const elapsedTime = clock.getElapsedTime();
 
-    // Player Input Vector (WASD & Arrow Keys)
+    // Player Input Vector (Keyboard WASD + Touch Joystick 合算)
     const inputDir = new THREE.Vector3();
     if (keys['KeyW'] || keys['ArrowUp']) inputDir.z -= 1;
     if (keys['KeyS'] || keys['ArrowDown']) inputDir.z += 1;
     if (keys['KeyA'] || keys['ArrowLeft']) inputDir.x -= 1;
     if (keys['KeyD'] || keys['ArrowRight']) inputDir.x += 1;
+
+    // タッチジョイスティック入力の加算
+    if (touchInputDir.lengthSq() > 0.01) {
+      inputDir.add(touchInputDir);
+    }
 
     player.update(delta, inputDir, world);
     world.update(delta, elapsedTime);
