@@ -178,7 +178,7 @@ export class GameStateManager {
       return;
     }
 
-    // 🐻 クマに木の実
+    // 1. 🐻 クマにアイテム
     if (npc.id === 'bear') {
       if (itemId === 'berry') {
         prog.fed = true;
@@ -190,6 +190,12 @@ export class GameStateManager {
           npc.showBubble('👋'); // 手を振ってほしい
           islandAudio.playNPCVoice('bear', true);
         }
+      } else if (itemId === 'mushroom') {
+        // 青キノコを食べさせると不思議な踊りを始める隠しリアクション
+        this.removeItem(itemId);
+        npc.showBubble('✨');
+        islandAudio.playNPCVoice('bear', true);
+        this.ui.showToast('🐻 クマモドキは光るキノコを食べて体がポッと光った！');
       } else {
         npc.showBubble('💢');
         islandAudio.playNPCVoice('bear', false);
@@ -197,7 +203,27 @@ export class GameStateManager {
       }
     }
 
-    // 🦀 カニに桜貝
+    // 2. 🕊️ カモメ爺さんにアイテム
+    else if (npc.id === 'gull') {
+      if (itemId === 'coin') {
+        // 🪙 金のコインを渡すと、礼儀をスキップして即座に望遠鏡を譲ってくれる（別解ルート）！
+        this.removeItem(itemId);
+        npc.showBubble('💖', 3.0);
+        islandAudio.playNPCVoice('gull', true);
+        this.ui.showToast('🕊️ カモメ爺さん「おお…！これは昔の灯台の金貨！お礼にこれを授けよう！」');
+        this.awardTreasure('telescope', npc);
+      } else if (itemId === 'mushroom') {
+        npc.showBubble('✨');
+        islandAudio.playNPCVoice('gull', true);
+        this.ui.showToast('🕊️ カモメ爺さん「夜の灯台を照らすのに良さそうなキノコじゃな」');
+      } else {
+        npc.showBubble('❓');
+        islandAudio.playNPCVoice('gull', false);
+        this.ui.showToast('🕊️ カモメ爺さんは首をかしげている…');
+      }
+    }
+
+    // 3. 🦀 カニ坊やにアイテム
     else if (npc.id === 'crab') {
       if (itemId === 'shell') {
         prog.gifted = true;
@@ -209,17 +235,35 @@ export class GameStateManager {
           npc.showBubble('💃'); // 一緒に踊ってほしい
           islandAudio.playNPCVoice('crab', true);
         }
+      } else if (itemId === 'coin') {
+        // 金のコインをあげるとハサミでカチカチ遊ぶ
+        this.removeItem(itemId);
+        npc.showBubble('🪙');
+        islandAudio.playNPCVoice('crab', true);
+        this.ui.showToast('🦀 カニ坊やはキラキラ光るコインを気に入ったようだ！');
       } else {
         npc.showBubble('❓');
         islandAudio.playNPCVoice('crab', false);
       }
     }
 
-    // 🕊️ カモメへのアイテム
-    else {
-      npc.showBubble('❓');
-      islandAudio.playNPCVoice(npc.id, false);
-      this.ui.showToast('特に興味がないようだ…');
+    // 4. 👤 影ぼうしにアイテム
+    else if (npc.id === 'shadow') {
+      if (itemId === 'mushroom') {
+        // 🍄 光るキノコを渡すと、影ぼうしが浄化されて喜ぶ！
+        this.removeItem(itemId);
+        npc.showBubble('💙', 3.5);
+        islandAudio.playNPCVoice('shadow', true);
+        this.ui.showToast('👤 影ぼうし「……暗い井戸の底を照らす光……ありがとう……」');
+        // もし既に他の宝物を持っていればオルゴールも渡す
+        if (this.treasures.length >= 3) {
+          this.awardTreasure('music_box', npc);
+        }
+      } else {
+        npc.showBubble('❓');
+        islandAudio.playNPCVoice('shadow', false);
+        this.ui.showToast('👤 影ぼうしは静かに闇の中を見つめている…');
+      }
     }
   }
 
