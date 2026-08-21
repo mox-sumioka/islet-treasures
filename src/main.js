@@ -210,7 +210,7 @@ function main() {
     // 2. Game Entities
     const world = new IslandWorld(scene);
     const player = new PlayerCharacter(scene);
-    player.group.position.set(0, 1.4, 20); // 桟橋のスタート位置
+    player.group.position.set(0, 1.15, 26.0); // 桟橋の先端からスタート！
 
     const npcs = createIslandNPCs(scene);
     const ui = new UIManager();

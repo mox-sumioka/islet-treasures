@@ -106,12 +106,12 @@ export class IslandWorld {
 
   // 座標(x, z)に応じた地面の高さを返す (広大な島に対応)
   getGroundHeight(x, z) {
-    const distFromCenter = Math.sqrt(x * x + z * z);
-    
-    // 桟橋 (南端)
-    if (Math.abs(x) < 2.0 && z > 20.0) {
-      return 1.4;
+    // 桟橋 (南端海上: xが[-1.6, 1.6], zが[18.0, 29.0])
+    if (Math.abs(x) < 1.8 && z >= 18.0 && z <= 29.0) {
+      return 1.15;
     }
+
+    const distFromCenter = Math.sqrt(x * x + z * z);
 
     // なだらかな丘の上の判定 (中心: -4, -4, 半径: 9.0)
     const hillDist = Math.sqrt((x + 4) * (x + 4) + (z + 4) * (z + 4));
@@ -170,18 +170,35 @@ export class IslandWorld {
       this.scene.add(tree);
     });
 
-    // 桟橋 (Wooden Pier - 南端)
+    // 桟橋 (Wooden Pier - 海へ突き出るウッドデッキ)
     const pier = new THREE.Group();
-    pier.position.set(0, 0.3, 23);
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.8, flatShading: true });
+    const postMat = new THREE.MeshStandardMaterial({ color: 0x5c3d2e, roughness: 0.9, flatShading: true });
 
-    for (let i = 0; i < 8; i++) {
+    // 12枚の木の床板 (z: 18 から 28.5 まで)
+    for (let i = 0; i < 12; i++) {
       const plank = new THREE.Mesh(
-        new THREE.BoxGeometry(2.6, 0.15, 0.8),
-        new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.8, flatShading: true })
+        new THREE.BoxGeometry(3.0, 0.15, 0.75),
+        woodMat
       );
-      plank.position.set(0, 0.4, -i * 0.95);
+      const zPos = 18.0 + i * 0.95;
+      plank.position.set(0, 1.1, zPos);
       plank.receiveShadow = true;
+      plank.castShadow = true;
       pier.add(plank);
+
+      // 左右の木製支柱・杭 (海の中へ打ち込み)
+      if (i % 3 === 0) {
+        [-1.35, 1.35].forEach(postX => {
+          const post = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.1, 0.12, 1.8, 6),
+            postMat
+          );
+          post.position.set(postX, 0.4, zPos);
+          post.castShadow = true;
+          pier.add(post);
+        });
+      }
     }
     this.scene.add(pier);
   }

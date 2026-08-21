@@ -115,9 +115,11 @@ export class PlayerCharacter {
       this.moveDir.copy(inputDir).normalize();
       const nextPos = this.group.position.clone().addScaledVector(this.moveDir, this.speed * delta);
 
-      // 島から落ちないように半径制限 (広大な島: 半径24.5m以内)
+      // 島から落ちないように半径制限 (島内: 半径24.5m以内、または 桟橋: xが[-1.6, 1.6]でzが28.5以内)
       const dist = new THREE.Vector2(nextPos.x, nextPos.z).length();
-      if (dist < 24.5) {
+      const onPier = Math.abs(nextPos.x) < 1.6 && nextPos.z >= 18.0 && nextPos.z <= 28.8;
+
+      if (dist < 24.5 || onPier) {
         this.group.position.copy(nextPos);
       }
 
@@ -229,8 +231,8 @@ export function createIslandNPCs(scene) {
   });
   npcs.push(bear);
 
-  // 2. 🕊️ 灯台のカモメ爺さん (Gull) - 北東の灯台前 (x: 11.0, z: -8.0)
-  const gull = new ResidentNPC('gull', '灯台のカモメ爺さん', new THREE.Vector3(11.0, 1.4, -8.0), scene, (group, npcInstance) => {
+  // 2. 🕊️ 灯台のカモメ爺さん (Gull) - 灯台の手前南西 (x: 8.5, z: -5.5)
+  const gull = new ResidentNPC('gull', '灯台のカモメ爺さん', new THREE.Vector3(8.5, 1.4, -5.5), scene, (group, npcInstance) => {
     // まず仮のプレースホルダーを配置して即座に画面に表示されるようにする
     const fallbackMesh = new THREE.Group();
     const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
@@ -290,8 +292,8 @@ export function createIslandNPCs(scene) {
   });
   npcs.push(gull);
 
-  // 3. 🦀 浜辺のカニ坊や (Crab) - 南東の広々とした美しい砂浜 (x: 12.0, y: 1.05, z: 14.0)
-  const crab = new ResidentNPC('crab', '浜辺のカニ坊や', new THREE.Vector3(12.0, 1.05, 14.0), scene, (group) => {
+  // 3. 🦀 浜辺のカニ坊や (Crab) - 南東の波打ち際・海のすぐ近くの砂浜 (x: 16.5, y: 1.05, z: 17.5)
+  const crab = new ResidentNPC('crab', '浜辺のカニ坊や', new THREE.Vector3(16.5, 1.05, 17.5), scene, (group) => {
     const redMat = new THREE.MeshStandardMaterial({ color: 0xff3333, roughness: 0.4, flatShading: true });
     const legMat = new THREE.MeshStandardMaterial({ color: 0xcc2222, roughness: 0.5, flatShading: true });
 
