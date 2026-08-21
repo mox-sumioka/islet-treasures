@@ -327,7 +327,7 @@ function main() {
     }
   });
 
-  // 毎フレームのインタラクトプロンプト自動更新 & 自動奉納
+  // 毎フレームのインタラクトプロンプト自動更新
   function updateProximityPrompts() {
     const px = player.group.position.x;
     const pz = player.group.position.z;
@@ -338,14 +338,10 @@ function main() {
       world.showAltarGuideBeam();
     }
 
-    // 1. 祭壇の近く (半径4.0m以内)
-    if (horizontalDist < 4.0) {
+    // 1. 祭壇の近く (半径3.8m以内)
+    if (horizontalDist < 3.8) {
       if (gameState.treasures.length >= 4) {
-        ui.promptText.innerHTML = '🌟 <strong>4つの宝物を祭壇に捧げる</strong> (奉納中…)';
-        // 祭壇の台座の内側 (半径2.5m以内) に入ったら自動的に奉納発動！
-        if (horizontalDist < 2.5 && !gameState.isEndingTriggered) {
-          gameState.checkAltarInteraction(true);
-        }
+        ui.promptText.innerHTML = '🌟 <strong>4つの宝物を祭壇に捧げる</strong> ([E] または タップ)';
       } else {
         ui.promptText.innerHTML = `🏛️ <strong>古代の祭壇を調べる</strong> (宝物: ${gameState.treasures.length}/4)`;
       }
@@ -377,19 +373,18 @@ function main() {
     ui.interactPrompt.classList.add('prompt-hidden');
   }
 
-  // プロンプト自体をクリック/タップしてもインタラクト実行
+  // プロンプト自体をクリック/タップして明示的に実行
   ui.interactPrompt.onclick = (e) => {
     e.stopPropagation();
     islandAudio.init();
-    gameState.checkAltarInteraction(true);
     checkInteractions();
   };
 
   function checkInteractions() {
-    // 1. 祭壇の確認 (水平距離4.0m以内なら強制実行)
+    // 1. 祭壇の確認 (水平距離3.8m以内で明示的に捧げる)
     const horizontalDist = Math.hypot(player.group.position.x, player.group.position.z);
-    if (horizontalDist < 4.0) {
-      gameState.checkAltarInteraction(true);
+    if (horizontalDist < 3.8) {
+      gameState.offerTreasuresToAltar();
       return;
     }
 

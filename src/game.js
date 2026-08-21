@@ -250,13 +250,13 @@ export class GameStateManager {
     }
   }
 
-  // 祭壇への奉納 (XZ水平距離で確実に判定)
-  checkAltarInteraction(force = false) {
+  // 祭壇への明示的な奉納アクション
+  offerTreasuresToAltar() {
     const px = this.player.group.position.x;
     const pz = this.player.group.position.z;
-    const horizontalDist = Math.hypot(px, pz); // XZ平面の水平距離 (中心 0, 0 からの距離)
+    const horizontalDist = Math.hypot(px, pz); // 祭壇中心からの距離
 
-    if (horizontalDist < 4.0 || force) {
+    if (horizontalDist < 4.0) {
       if (this.treasures.length >= 4) {
         this.triggerEnding();
       } else {
@@ -264,6 +264,8 @@ export class GameStateManager {
         this.ui.diaryModal.classList.remove('hidden');
         this.ui.showToast(`🏛️ 祭壇の封印には4つの宝物が必要です (現在 ${this.treasures.length}/4)`);
       }
+    } else {
+      this.ui.showToast('祭壇の中央へもっと近づこう！');
     }
   }
 
@@ -271,7 +273,7 @@ export class GameStateManager {
     if (this.isEndingTriggered) return;
     this.isEndingTriggered = true;
 
-    // 1. 祭壇の台座に4つの宝物を光らせて配置
+    // 1. 祭壇の台座に4つの宝物を光らせて配置 (ドラマチック奉納演出)
     if (this.world && this.world.placeTreasuresOnAltar) {
       this.world.placeTreasuresOnAltar();
     }
@@ -279,12 +281,12 @@ export class GameStateManager {
     // 2. お祝いファンファーレ & 紙吹雪
     confetti({ particleCount: 300, spread: 140, origin: { y: 0.5 } });
     islandAudio.playTreasureFanfare();
-    this.ui.showToast('🌟 祭壇の封印が解かれた！島の記憶がひとつになる…');
+    this.ui.showToast('🌟 4つの宝物を捧げた！島の記憶がひとつになる…');
 
     // 3. エンディングモーダル表示
     setTimeout(() => {
       this.ui.showEndingModal();
-    }, 1200);
+    }, 1500);
   }
 
   removeItem(itemId) {
