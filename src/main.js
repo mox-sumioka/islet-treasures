@@ -210,6 +210,8 @@ function main() {
     // 2. Game Entities
     const world = new IslandWorld(scene);
     const player = new PlayerCharacter(scene);
+    player.group.position.set(0, 1.4, 20); // 桟橋のスタート位置
+
     const npcs = createIslandNPCs(scene);
     const ui = new UIManager();
     const gameState = new GameStateManager(player, npcs, world, ui);
@@ -434,14 +436,14 @@ function main() {
     // 近接プロンプト更新
     updateProximityPrompts();
 
-    // Smooth Camera Follow (完全にブレのない滑らかなクォータービュー追従)
+    // Smooth Camera Follow (広大な島を見渡す滑らかなクォータービュー追従)
     const targetCamPos = new THREE.Vector3(
       player.group.position.x,
-      9.9, // 1.4 (地面) + 8.5 (カメラ高さ) で固定
-      player.group.position.z + 11
+      player.group.position.y + 9.5,
+      player.group.position.z + 12.0
     );
-    camera.position.lerp(targetCamPos, delta * 5.0);
-    camera.lookAt(new THREE.Vector3(player.group.position.x, 1.4, player.group.position.z));
+    camera.position.lerp(targetCamPos, delta * 4.5);
+    camera.lookAt(new THREE.Vector3(player.group.position.x, player.group.position.y + 0.5, player.group.position.z));
 
     // 3D Speech Bubble Projection to 2D HUD
     ui.updateNPCBubbles(npcs, camera, window.innerWidth, window.innerHeight);

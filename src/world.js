@@ -10,28 +10,28 @@ export const PICKABLE_ITEMS_DEF = [
     name: 'あまい木の実',
     emoji: '🍎',
     color: 0xff3b30,
-    pos: new THREE.Vector3(-2.5, 1.4, 4.0), // クマから離れた森の木陰
+    pos: new THREE.Vector3(-10.0, 1.4, 7.0), // クマから離れた西の深い森の木陰
   },
   {
     id: 'shell',
     name: 'きれいな桜貝',
     emoji: '🐚',
     color: 0xffa8ba,
-    pos: new THREE.Vector3(5.5, 1.05, 2.5), // 浜辺の砂の上
+    pos: new THREE.Vector3(18.0, 1.05, -8.0), // カニから大きく離れた北東の美しい砂浜
   },
   {
     id: 'mushroom',
     name: '光る青キノコ',
     emoji: '🍄',
     color: 0x00b4d8,
-    pos: new THREE.Vector3(-6.5, 1.4, -1.5), // 井戸の近くの草地の上
+    pos: new THREE.Vector3(-14.0, 1.4, -4.0), // 西の井戸の近くの草地の上
   },
   {
     id: 'coin',
     name: '古びた金のコイン',
     emoji: '🪙',
     color: 0xffd166,
-    pos: new THREE.Vector3(7.0, 1.4, -4.0), // 灯台の脇
+    pos: new THREE.Vector3(14.0, 1.4, -13.0), // 灯台の脇の草地
   },
 ];
 
@@ -51,8 +51,8 @@ export class IslandWorld {
   }
 
   buildTerrain() {
-    // 1. 海面 (Water Plane)
-    const waterGeo = new THREE.PlaneGeometry(120, 120, 24, 24);
+    // 1. 広大な海面 (Water Plane)
+    const waterGeo = new THREE.PlaneGeometry(240, 240, 32, 32);
     const waterMat = new THREE.MeshStandardMaterial({
       color: 0x48cae4,
       roughness: 0.1,
@@ -66,9 +66,9 @@ export class IslandWorld {
     this.waterMesh.position.y = -0.1;
     this.scene.add(this.waterMesh);
 
-    // 2. 島の土台 (Green Grass & Sand Beach)
-    // 砂浜 (外側)
-    const sandGeo = new THREE.CylinderGeometry(13, 15, 1.2, 24);
+    // 2. 2倍の広さの島 (Sand Beach & Green Grass)
+    // 砂浜 (広々とした外側)
+    const sandGeo = new THREE.CylinderGeometry(24, 28, 1.2, 32);
     const sandMat = new THREE.MeshStandardMaterial({
       color: 0xfde2b8,
       roughness: 0.9,
@@ -79,8 +79,8 @@ export class IslandWorld {
     sand.receiveShadow = true;
     this.scene.add(sand);
 
-    // 草地 (内側の丘)
-    const grassGeo = new THREE.CylinderGeometry(10, 12, 1.0, 20);
+    // 草地 (内側の豊かな台地)
+    const grassGeo = new THREE.CylinderGeometry(17, 21, 1.0, 28);
     const grassMat = new THREE.MeshStandardMaterial({
       color: 0x90be6d,
       roughness: 0.8,
@@ -92,48 +92,54 @@ export class IslandWorld {
     this.scene.add(grass);
 
     // 中央の高台 (なだらかな丘)
-    const hillGeo = new THREE.CylinderGeometry(2.0, 4.8, 0.8, 16);
+    const hillGeo = new THREE.CylinderGeometry(4.0, 9.0, 0.9, 20);
     const hillMat = new THREE.MeshStandardMaterial({
       color: 0x7fa95b,
       roughness: 0.9,
       flatShading: true,
     });
     const hill = new THREE.Mesh(hillGeo, hillMat);
-    hill.position.set(-2, 1.6, -2);
+    hill.position.set(-4, 1.6, -4);
     hill.receiveShadow = true;
     this.scene.add(hill);
   }
 
-  // 座標(x, z)に応じた地面の高さを返す
+  // 座標(x, z)に応じた地面の高さを返す (広大な島に対応)
   getGroundHeight(x, z) {
     const distFromCenter = Math.sqrt(x * x + z * z);
     
-    // 桟橋
-    if (Math.abs(x) < 1.2 && z > 11.0) {
+    // 桟橋 (南端)
+    if (Math.abs(x) < 2.0 && z > 20.0) {
       return 1.4;
     }
 
-    // 丘の上の判定 (中心: -2, -2, 半径: 4.5)
-    const hillDist = Math.sqrt((x + 2) * (x + 2) + (z + 2) * (z + 2));
-    if (hillDist < 4.5) {
-      const hillFactor = Math.max(0, 1.0 - hillDist / 4.5);
-      return 1.4 + hillFactor * 0.8;
+    // なだらかな丘の上の判定 (中心: -4, -4, 半径: 9.0)
+    const hillDist = Math.sqrt((x + 4) * (x + 4) + (z + 4) * (z + 4));
+    if (hillDist < 9.0) {
+      const hillFactor = Math.max(0, 1.0 - hillDist / 9.0);
+      return 1.4 + hillFactor * 0.9;
     }
 
-    // 草地
-    if (distFromCenter < 10.0) {
+    // 草地 (内側)
+    if (distFromCenter < 17.5) {
       return 1.4;
     }
 
-    // 砂浜
+    // 砂浜 (浜辺)
     return 1.05;
   }
 
   buildDecorations() {
-    // 木々 (Low-poly Trees)
+    // 木々 (Low-poly Trees - 広大な森と木立)
     const treePositions = [
-      [-5, 1.4, 2], [-7, 1.4, 0], [-4, 1.4, -4],
-      [2, 1.4, 4], [0, 1.4, 6], [-3, 1.4, 6],
+      // 西の深い森 (クマの住処周辺)
+      [-8, 1.4, 4], [-11, 1.4, 2], [-13, 1.4, 6], [-9, 1.4, 9], [-7, 1.4, 7],
+      // 北西の林 (古井戸周辺)
+      [-8, 1.4, -6], [-12, 1.4, -10], [-6, 1.4, -10],
+      // 中央南・東の並木
+      [4, 1.4, 8], [-2, 1.4, 12], [6, 1.4, 12], [8, 1.4, 4],
+      // 北東の灯台への小道
+      [6, 1.4, -6], [8, 1.4, -12],
     ];
 
     treePositions.forEach(([x, y, z]) => {
@@ -142,117 +148,103 @@ export class IslandWorld {
 
       // 幹
       const trunk = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.2, 0.25, 1.2, 6),
+        new THREE.CylinderGeometry(0.25, 0.35, 1.4, 6),
         new THREE.MeshStandardMaterial({ color: 0x6f4e37, roughness: 0.9, flatShading: true })
       );
-      trunk.position.y = 0.6;
+      trunk.position.y = 0.7;
       trunk.castShadow = true;
       tree.add(trunk);
 
       // 葉 (2段のコーン)
       const leavesMat = new THREE.MeshStandardMaterial({ color: 0x4d908e, roughness: 0.8, flatShading: true });
-      const leaves1 = new THREE.Mesh(new THREE.ConeGeometry(1.2, 1.2, 6), leavesMat);
-      leaves1.position.y = 1.4;
+      const leaves1 = new THREE.Mesh(new THREE.ConeGeometry(1.4, 1.4, 6), leavesMat);
+      leaves1.position.y = 1.6;
       leaves1.castShadow = true;
       tree.add(leaves1);
 
-      const leaves2 = new THREE.Mesh(new THREE.ConeGeometry(0.9, 1.0, 6), leavesMat);
-      leaves2.position.y = 2.0;
+      const leaves2 = new THREE.Mesh(new THREE.ConeGeometry(1.0, 1.2, 6), leavesMat);
+      leaves2.position.y = 2.4;
       leaves2.castShadow = true;
       tree.add(leaves2);
 
       this.scene.add(tree);
     });
 
-    // 桟橋 (Wooden Pier)
+    // 桟橋 (Wooden Pier - 南端)
     const pier = new THREE.Group();
-    pier.position.set(0, 0.3, 13);
-    for (let i = 0; i < 4; i++) {
+    pier.position.set(0, 0.3, 23);
+
+    for (let i = 0; i < 8; i++) {
       const plank = new THREE.Mesh(
-        new THREE.BoxGeometry(1.6, 0.15, 0.7),
-        new THREE.MeshStandardMaterial({ color: 0x7f5539, roughness: 0.9, flatShading: true })
+        new THREE.BoxGeometry(2.6, 0.15, 0.8),
+        new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.8, flatShading: true })
       );
-      plank.position.set(0, 0, i * 0.8);
-      plank.castShadow = true;
+      plank.position.set(0, 0.4, -i * 0.95);
       plank.receiveShadow = true;
       pier.add(plank);
     }
     this.scene.add(pier);
-
-    // 浜辺の岩 (Rocks)
-    const rockMat = new THREE.MeshStandardMaterial({ color: 0xadb5bd, roughness: 0.9, flatShading: true });
-    [[8, 0.3, 2], [-9, 0.3, 3], [3, 0.3, -8], [-5, 0.3, -9]].forEach(([rx, ry, rz]) => {
-      const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.6 + Math.random() * 0.4), rockMat);
-      rock.position.set(rx, ry, rz);
-      rock.castShadow = true;
-      this.scene.add(rock);
-    });
   }
 
   buildLandmarks() {
-    // 1. 白い灯台 (Lighthouse) - 東側 (x: 6, z: -5)
+    // 1. 白い灯台 (Lighthouse) - 北東の岬 (x: 12, z: -10)
     const lighthouse = new THREE.Group();
-    lighthouse.position.set(6, 1.4, -5);
+    lighthouse.position.set(12, 1.4, -10);
 
-    // 本体塔
-    const tower = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.7, 1.1, 4.2, 8),
-      new THREE.MeshStandardMaterial({ color: 0xf8f9fa, roughness: 0.6, flatShading: true })
+    const base = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.6, 2.4, 6.0, 12),
+      new THREE.MeshStandardMaterial({ color: 0xf4f1de, roughness: 0.5, flatShading: true })
     );
-    tower.position.y = 2.1;
-    tower.castShadow = true;
-    lighthouse.add(tower);
+    base.position.y = 3.0;
+    base.castShadow = true;
+    base.receiveShadow = true;
+    lighthouse.add(base);
 
     // 赤いストライプ
     const stripe = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.82, 0.92, 0.8, 8),
-      new THREE.MeshStandardMaterial({ color: 0xd90429, roughness: 0.6, flatShading: true })
+      new THREE.CylinderGeometry(1.8, 2.0, 1.2, 12),
+      new THREE.MeshStandardMaterial({ color: 0xe63946, roughness: 0.5, flatShading: true })
     );
-    stripe.position.y = 2.5;
+    stripe.position.y = 4.2;
     lighthouse.add(stripe);
 
-    // ランプ室 & 屋根
-    const lamp = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.6, 0.6, 0.6, 8),
-      new THREE.MeshBasicMaterial({ color: 0xffea00 })
+    // 灯台のランタン室
+    const top = new THREE.Mesh(
+      new THREE.CylinderGeometry(1.2, 1.2, 1.0, 8),
+      new THREE.MeshStandardMaterial({ color: 0x264653, roughness: 0.3 })
     );
-    lamp.position.y = 4.4;
-    lighthouse.add(lamp);
+    top.position.y = 6.4;
+    lighthouse.add(top);
 
-    const roof = new THREE.Mesh(
-      new THREE.ConeGeometry(0.8, 0.8, 8),
-      new THREE.MeshStandardMaterial({ color: 0x2b2d42, roughness: 0.5, flatShading: true })
-    );
-    roof.position.y = 5.0;
-    lighthouse.add(roof);
-
-    // 灯台の回転ビーム光 (Spotlight)
-    const spot = new THREE.SpotLight(0xffea00, 3.0, 20, Math.PI / 6, 0.3);
-    spot.position.set(0, 4.4, 0);
-    lighthouse.add(spot);
-    this.lighthouseLight = spot;
+    // 灯台の光
+    this.lighthouseLight = new THREE.SpotLight(0xfff3b0, 4, 30, Math.PI / 4, 0.5);
+    this.lighthouseLight.position.set(0, 6.5, 0);
+    this.lighthouseLight.castShadow = true;
+    lighthouse.add(this.lighthouseLight);
+    lighthouse.add(this.lighthouseLight.target);
 
     this.scene.add(lighthouse);
 
-    // 2. 古い石の祠・祭壇 (Altar of Memories) - 中央 (x: 0, z: 0)
+    // 2. 古代の祭壇 (Ancient Altar) - 中央 (x: 0, z: 0)
     const altar = new THREE.Group();
     altar.position.set(0, 1.4, 0);
 
-    const baseStone = new THREE.Mesh(
-      new THREE.CylinderGeometry(2.2, 2.5, 0.4, 8),
+    const altarBase = new THREE.Mesh(
+      new THREE.CylinderGeometry(2.4, 2.8, 0.4, 8),
       new THREE.MeshStandardMaterial({ color: 0x6c757d, roughness: 0.9, flatShading: true })
     );
-    baseStone.receiveShadow = true;
-    altar.add(baseStone);
+    altarBase.position.y = 0.2;
+    altarBase.receiveShadow = true;
+    altar.add(altarBase);
 
-    // 4つの宝物台座
+    // 4本の石柱 (4つの宝物の台座)
     const angles = [0, Math.PI / 2, Math.PI, Math.PI * 1.5];
     angles.forEach((rad, idx) => {
       const pillar = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.25, 0.3, 0.7, 6),
+        new THREE.CylinderGeometry(0.28, 0.35, 0.8, 6),
         new THREE.MeshStandardMaterial({ color: 0x495057, roughness: 0.8, flatShading: true })
       );
-      pillar.position.set(Math.cos(rad) * 1.3, 0.45, Math.sin(rad) * 1.3);
+      pillar.position.set(Math.cos(rad) * 1.6, 0.55, Math.sin(rad) * 1.6);
       pillar.castShadow = true;
       altar.add(pillar);
       this.altarPillars.push(pillar);
@@ -262,7 +254,7 @@ export class IslandWorld {
     this.altarGroup = altar;
 
     // 4つ揃った時に光る祭壇の光の魔法陣 & 光柱
-    const beamGeo = new THREE.CylinderGeometry(1.8, 1.8, 15, 16, 1, true);
+    const beamGeo = new THREE.CylinderGeometry(2.2, 2.2, 18, 16, 1, true);
     const beamMat = new THREE.MeshBasicMaterial({
       color: 0xffd166,
       transparent: true,
@@ -270,10 +262,10 @@ export class IslandWorld {
       side: THREE.DoubleSide
     });
     this.altarBeam = new THREE.Mesh(beamGeo, beamMat);
-    this.altarBeam.position.set(0, 7.5, 0);
+    this.altarBeam.position.set(0, 9.0, 0);
     this.scene.add(this.altarBeam);
 
-    const circleGeo = new THREE.RingGeometry(0.5, 2.5, 24);
+    const circleGeo = new THREE.RingGeometry(0.6, 3.2, 24);
     const circleMat = new THREE.MeshBasicMaterial({
       color: 0xffd166,
       transparent: true,
@@ -285,12 +277,12 @@ export class IslandWorld {
     this.altarCircle.position.set(0, 1.45, 0);
     this.scene.add(this.altarCircle);
 
-    // 3. 古井戸 (Ancient Well) - 西側 (x: -4.5, z: -2.5)
+    // 3. 古井戸 (Ancient Well) - 北西 (x: -11.0, z: -7.0)
     const well = new THREE.Group();
-    well.position.set(-4.5, 1.4, -2.5);
+    well.position.set(-11.0, 1.4, -7.0);
 
     const wellRing = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.9, 0.9, 0.7, 8, 1, true),
+      new THREE.CylinderGeometry(1.0, 1.0, 0.8, 8, 1, true),
       new THREE.MeshStandardMaterial({ color: 0x5c4d3c, roughness: 0.9, flatShading: true, side: THREE.DoubleSide })
     );
     wellRing.position.y = 0.35;

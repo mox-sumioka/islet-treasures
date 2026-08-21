@@ -115,9 +115,9 @@ export class PlayerCharacter {
       this.moveDir.copy(inputDir).normalize();
       const nextPos = this.group.position.clone().addScaledVector(this.moveDir, this.speed * delta);
 
-      // 島から落ちないように半径制限 (10.5以内)
+      // 島から落ちないように半径制限 (広大な島: 半径24.5m以内)
       const dist = new THREE.Vector2(nextPos.x, nextPos.z).length();
-      if (dist < 11.0) {
+      if (dist < 24.5) {
         this.group.position.copy(nextPos);
       }
 
@@ -204,8 +204,8 @@ export function createIslandNPCs(scene) {
   const npcs = [];
   const gltfLoader = new GLTFLoader();
 
-  // 1. 🐻 森のクマモドキ (Bear)
-  const bear = new ResidentNPC('bear', '森のクマモドキ', new THREE.Vector3(-4.5, 1.4, 2.5), scene, (group) => {
+  // 1. 🐻 森のクマモドキ (Bear) - 西の森 (x: -9.0, z: 5.0)
+  const bear = new ResidentNPC('bear', '森のクマモドキ', new THREE.Vector3(-9.0, 1.4, 5.0), scene, (group) => {
     const mat = new THREE.MeshStandardMaterial({ color: 0x8d5b4c, roughness: 0.9, flatShading: true });
     const earMat = new THREE.MeshStandardMaterial({ color: 0xffb5a7, roughness: 0.8, flatShading: true });
 
@@ -229,8 +229,8 @@ export function createIslandNPCs(scene) {
   });
   npcs.push(bear);
 
-  // 2. 🕊️ 灯台のカモメ爺さん (Gull) - ユーザーのオリジナルBlenderモデル (kamome.glb)
-  const gull = new ResidentNPC('gull', '灯台のカモメ爺さん', new THREE.Vector3(5.5, 1.4, -3.2), scene, (group, npcInstance) => {
+  // 2. 🕊️ 灯台のカモメ爺さん (Gull) - 北東の灯台前 (x: 11.0, z: -8.0)
+  const gull = new ResidentNPC('gull', '灯台のカモメ爺さん', new THREE.Vector3(11.0, 1.4, -8.0), scene, (group, npcInstance) => {
     // まず仮のプレースホルダーを配置して即座に画面に表示されるようにする
     const fallbackMesh = new THREE.Group();
     const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
@@ -290,8 +290,8 @@ export function createIslandNPCs(scene) {
   });
   npcs.push(gull);
 
-  // 3. 🦀 浜辺のカニ坊や (Crab) - 桟橋すぐ右手の見晴らしの良い砂浜 (x: 3.5, y: 1.1, z: 5.5)
-  const crab = new ResidentNPC('crab', '浜辺のカニ坊や', new THREE.Vector3(3.5, 1.1, 5.5), scene, (group) => {
+  // 3. 🦀 浜辺のカニ坊や (Crab) - 南東の広々とした美しい砂浜 (x: 12.0, y: 1.05, z: 14.0)
+  const crab = new ResidentNPC('crab', '浜辺のカニ坊や', new THREE.Vector3(12.0, 1.05, 14.0), scene, (group) => {
     const redMat = new THREE.MeshStandardMaterial({ color: 0xff3333, roughness: 0.4, flatShading: true });
     const legMat = new THREE.MeshStandardMaterial({ color: 0xcc2222, roughness: 0.5, flatShading: true });
 
@@ -343,8 +343,8 @@ export function createIslandNPCs(scene) {
   });
   npcs.push(crab);
 
-  // 4. 👤 古井戸の影ぼうし (Shadow) - 古井戸のすぐ横 (x: -4.5, z: -1.2)
-  const shadow = new ResidentNPC('shadow', '古井戸の影ぼうし', new THREE.Vector3(-4.5, 1.4, -1.2), scene, (group) => {
+  // 4. 👤 古井戸の影ぼうし (Shadow) - 北西の古井戸のすぐ横 (x: -11.0, y: 1.4, z: -5.5)
+  const shadow = new ResidentNPC('shadow', '古井戸の影ぼうし', new THREE.Vector3(-11.0, 1.4, -5.5), scene, (group) => {
     const shadowMat = new THREE.MeshBasicMaterial({ color: 0x240046, transparent: true, opacity: 0.9 });
 
     const body = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.1, 8), shadowMat);
