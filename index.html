@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ちいさな島の宝もの - Islet Treasures</title>
+  <link rel="stylesheet" href="./src/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@400;500&family=Yomogi&family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div id="game-container"></div>
+
+  <!-- UI Overlay -->
+  <div id="ui-layer">
+    <!-- Top Status Bar -->
+    <header class="top-hud">
+      <div class="island-title-card">
+        <span class="island-icon">🏝️</span>
+        <div class="island-info">
+          <span class="island-name">わすれな島</span>
+          <span class="island-sub">住人たちと心を通わせよう</span>
+        </div>
+      </div>
+
+      <div class="hud-buttons">
+        <button class="hud-btn" id="btn-sound-toggle" title="音量切替">
+          <span id="sound-icon">🔊</span>
+        </button>
+        <button class="hud-btn diary-btn" id="btn-open-diary">
+          <span class="btn-emoji">📖</span>
+          <span>記憶の手帳 (<span id="treasure-count">0</span>/4)</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Context Interact Prompt -->
+    <div id="interact-prompt" class="prompt-hidden">
+      <span class="prompt-key">[ E ] または タップ</span>
+      <span class="prompt-text" id="prompt-text">はなしかける</span>
+    </div>
+
+    <!-- Emotion / Reaction Balloon (3D投影用コンテナ) -->
+    <div id="npc-bubbles-container"></div>
+
+    <!-- Bottom Controls (Inventory & Emote Wheel Trigger) -->
+    <footer class="bottom-hud">
+      <!-- Emote Quick Bar / Trigger -->
+      <div class="emote-bar">
+        <button class="emote-btn" data-emote="wave" title="手を振る">👋</button>
+        <button class="emote-btn" data-emote="bow" title="おじぎ">🙇</button>
+        <button class="emote-btn" data-emote="dance" title="おどる">💃</button>
+        <button class="emote-btn" data-emote="think" title="首をかしげる">❓</button>
+        <button class="emote-btn" data-emote="clap" title="拍手する">👏</button>
+        <button class="emote-btn" data-emote="surprise" title="おどろく">❗</button>
+      </div>
+
+      <!-- Inventory Item Tray -->
+      <div class="inventory-tray">
+        <div class="tray-label">持ちもの (選んで渡す)</div>
+        <div class="inventory-slots" id="inventory-slots">
+          <!-- Dynamically populated items -->
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Diary Modal (記憶の手帳 - 集めた宝物と少し不気味な絵日記) -->
+  <div id="diary-modal" class="modal-overlay hidden">
+    <div class="diary-book">
+      <button class="modal-close-btn" id="btn-close-diary">✕</button>
+      <div class="diary-header">
+        <h2>📖 旅人の手帳</h2>
+        <p class="diary-desc">島で見つけた宝物と、かすかに蘇る記憶の断片…</p>
+      </div>
+
+      <div class="treasures-grid" id="treasures-grid">
+        <!-- 4つの宝物スロット -->
+      </div>
+
+      <div class="story-pages" id="story-pages">
+        <!-- 復元された絵日記の文章 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Ending Screen Modal -->
+  <div id="ending-modal" class="modal-overlay hidden">
+    <div class="ending-card">
+      <div class="ending-star">🌟</div>
+      <h1 class="ending-title">島の真実</h1>
+      <div class="ending-body" id="ending-body-text">
+        <!-- エンディングストーリー -->
+      </div>
+      <button class="ending-btn" id="btn-restart-island">島でのんびり過ごす</button>
+    </div>
+  </div>
+
+  <!-- Touch Virtual Joystick for Mobile -->
+  <div id="touch-controls" class="touch-hidden">
+    <div id="joystick-base">
+      <div id="joystick-knob"></div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

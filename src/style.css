@@ -1,0 +1,497 @@
+:root {
+  --bg-island: #8ee3ef;
+  --panel-bg: rgba(255, 252, 245, 0.92);
+  --wood-dark: #4a3525;
+  --wood-mid: #7d5a3c;
+  --accent-gold: #f4a261;
+  --accent-teal: #2a9d8f;
+  --accent-red: #e76f51;
+  --text-main: #33261d;
+  --text-muted: #6e5849;
+  --font-main: 'Zen Maru Gothic', 'Kiwi Maru', sans-serif;
+  --font-hand: 'Yomogi', cursive, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-island);
+  font-family: var(--font-main);
+  color: var(--text-main);
+}
+
+#game-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+/* ========================================================
+   UI OVERLAY
+   ======================================================== */
+#ui-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px 20px;
+}
+
+/* Top HUD */
+.top-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  pointer-events: auto;
+}
+
+.island-title-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel-bg);
+  padding: 8px 18px;
+  border-radius: 30px;
+  border: 2px solid #e3d3bd;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.island-icon {
+  font-size: 1.6rem;
+}
+
+.island-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.island-name {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--wood-dark);
+}
+
+.island-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.hud-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.hud-btn {
+  background: var(--panel-bg);
+  border: 2px solid #e3d3bd;
+  border-radius: 24px;
+  padding: 8px 16px;
+  font-family: var(--font-main);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--wood-dark);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.hud-btn:hover {
+  background: #fff;
+  transform: translateY(-2px);
+  border-color: var(--accent-gold);
+  box-shadow: 0 6px 16px rgba(244, 162, 97, 0.25);
+}
+
+.diary-btn {
+  background: linear-gradient(135deg, #fff9f0, #ffecd1);
+  border-color: var(--accent-gold);
+}
+
+/* ========================================================
+   INTERACT PROMPT & NPC BUBBLE
+   ======================================================== */
+#interact-prompt {
+  position: absolute;
+  bottom: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(45, 30, 20, 0.85);
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 24px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(6px);
+  transition: all 0.2s ease;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.prompt-hidden {
+  opacity: 0;
+  transform: translate(-50%, 10px) !important;
+  pointer-events: none !important;
+}
+
+.prompt-key {
+  background: var(--accent-gold);
+  color: #000;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+/* NPC Speech Bubble */
+.npc-bubble {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  background: #ffffff;
+  border: 3px solid var(--wood-dark);
+  border-radius: 20px;
+  padding: 8px 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  min-width: 54px;
+  height: 48px;
+  pointer-events: none;
+  animation: bubble-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.npc-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 10px 8px 0;
+  border-style: solid;
+  border-color: #ffffff transparent;
+  display: block;
+  width: 0;
+}
+
+.npc-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 14px 11px 0;
+  border-style: solid;
+  border-color: var(--wood-dark) transparent;
+  display: block;
+  width: 0;
+}
+
+@keyframes bubble-pop {
+  0% { transform: translate(-50%, -80%) scale(0.3); opacity: 0; }
+  80% { transform: translate(-50%, -105%) scale(1.1); }
+  100% { transform: translate(-50%, -100%) scale(1); opacity: 1; }
+}
+
+/* ========================================================
+   BOTTOM HUD (EMOTES & INVENTORY)
+   ======================================================== */
+.bottom-hud {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  pointer-events: auto;
+}
+
+/* Emote Bar */
+.emote-bar {
+  display: flex;
+  gap: 8px;
+  background: var(--panel-bg);
+  padding: 6px 12px;
+  border-radius: 30px;
+  border: 2px solid #e3d3bd;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(8px);
+}
+
+.emote-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: #ffffff;
+  font-size: 1.4rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.emote-btn:hover {
+  transform: translateY(-4px) scale(1.15);
+  border-color: var(--accent-gold);
+  background: #fff8eb;
+  box-shadow: 0 6px 14px rgba(244, 162, 97, 0.3);
+}
+
+/* Inventory Tray */
+.inventory-tray {
+  width: 100%;
+  background: var(--panel-bg);
+  border-radius: 20px;
+  border: 2px solid #e3d3bd;
+  padding: 8px 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.tray-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.inventory-slots {
+  display: flex;
+  gap: 10px;
+  min-height: 52px;
+  align-items: center;
+}
+
+.item-slot {
+  width: 52px;
+  height: 52px;
+  background: #ffffff;
+  border: 2px solid #ecdac6;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.item-slot.selected {
+  border-color: var(--accent-teal);
+  background: #e8f7f5;
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(42, 157, 143, 0.3);
+}
+
+.item-slot:hover {
+  border-color: var(--accent-gold);
+}
+
+.item-emoji {
+  font-size: 1.6rem;
+}
+
+.item-count {
+  position: absolute;
+  bottom: 2px;
+  right: 4px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  color: var(--text-muted);
+}
+
+/* ========================================================
+   MODALS (DIARY & ENDING)
+   ======================================================== */
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 100;
+  background: rgba(30, 20, 15, 0.6);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.3s ease;
+  pointer-events: auto;
+}
+
+.modal-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+  display: none;
+}
+
+.diary-book {
+  background: #fbf5eb;
+  border: 4px solid var(--wood-mid);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 600px;
+  padding: 30px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.diary-header h2 {
+  font-size: 1.5rem;
+  color: var(--wood-dark);
+}
+
+.diary-desc {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.treasures-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.treasure-card {
+  background: #fff;
+  border: 2px dashed #d8c4ad;
+  border-radius: 12px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  min-height: 95px;
+}
+
+.treasure-card.collected {
+  border-style: solid;
+  border-color: var(--accent-gold);
+  background: #fffaf0;
+}
+
+.treasure-icon {
+  font-size: 2rem;
+  margin-bottom: 4px;
+}
+
+.treasure-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--wood-dark);
+}
+
+.story-pages {
+  background: #fffdf8;
+  border: 1px solid #ebd9c5;
+  border-radius: 12px;
+  padding: 16px;
+  min-height: 120px;
+  max-height: 180px;
+  overflow-y: auto;
+  font-family: var(--font-hand);
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: #4a382c;
+}
+
+/* Ending Card */
+.ending-card {
+  background: #fff9f0;
+  border: 4px solid var(--accent-gold);
+  border-radius: 24px;
+  width: 90%;
+  max-width: 540px;
+  padding: 36px 28px;
+  text-align: center;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.ending-star {
+  font-size: 3rem;
+  animation: pulse 1.5s infinite alternate;
+}
+
+.ending-title {
+  font-size: 1.8rem;
+  color: var(--wood-dark);
+}
+
+.ending-body {
+  font-family: var(--font-hand);
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: #4d382b;
+  text-align: left;
+  background: #fff;
+  padding: 18px;
+  border-radius: 12px;
+  border: 1px solid #eedecb;
+  width: 100%;
+}
+
+.ending-btn {
+  background: linear-gradient(135deg, var(--accent-gold), var(--accent-red));
+  color: #fff;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 24px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(231, 111, 81, 0.3);
+}
