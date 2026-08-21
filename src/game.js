@@ -275,12 +275,25 @@ export class GameStateManager {
     npc.isSatisfied = true;
     npc.showBubble('💖', 4.0);
 
+    // 楽器のアンロック連動！
+    islandAudio.updateUnlockedTreasures(this.treasures);
+
     islandAudio.playNPCVoice(npc.id, true);
     islandAudio.playTreasureFanfare();
     confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
 
     const def = TREASURES_DEF.find(t => t.id === treasureId);
-    this.ui.showToast(`🎉 【${def.name}】を分けてもらった！手帳に記憶が蘇る… (${this.treasures.length}/4)`);
+    
+    // 楽器のメッセージ
+    const instrumentNames = {
+      bear: '🥁 クマの【大地の太鼓】がBGMに加わった！',
+      crab: '🎻 カニの【跳ねる弦楽器】がBGMに加わった！',
+      gull: '🪈 カモメの【風のフルート】がBGMに加わった！',
+      shadow: '✨ 影ぼうしの【深海ベースとベル】がBGMに加わった！',
+    };
+    const instMsg = instrumentNames[npc.id] || '';
+
+    this.ui.showToast(`🎉 【${def.name}】を受け取った！\n${instMsg} (${this.treasures.length}/4)`);
     this.ui.updateTreasureCount(this.treasures.length);
 
     // 4つ集まったら祭壇へ促す & 祭壇を黄金に光らせる！
@@ -289,8 +302,8 @@ export class GameStateManager {
         this.world.showAltarGuideBeam();
       }
       setTimeout(() => {
-        this.ui.showToast('🌟 4つの宝物がすべて揃った！中央の光る祭壇へ向かおう！');
-      }, 2000);
+        this.ui.showToast('🌟 4つの楽器が揃い、奇跡の四重奏が響き渡る！中央の光る祭壇へ向かおう！');
+      }, 3000);
     }
   }
 

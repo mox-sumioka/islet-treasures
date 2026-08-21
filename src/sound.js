@@ -1,5 +1,5 @@
 // ========================================================
-// Islet Sound Synthesizer (Wave Ambience, NPC Voices & Music Box)
+// Islet Sound Synthesizer (Wave Ambience, Voices & Interactive Quartet BGM)
 // ========================================================
 
 class IslandAudioEngine {
@@ -9,7 +9,16 @@ class IslandAudioEngine {
     this.bgmGain = null;
     this.sfxGain = null;
     this.isMuted = false;
-    this.bgmTimer = null;
+    this.stepIndex = 0;
+    this.bgmInterval = null;
+
+    // 楽器のアンロック状態 (宝物獲得に応じて増えていく)
+    this.unlocked = {
+      drums: false,   // 🐻 クマ (星の小石): 大地の太鼓・パーカッション
+      strings: false, // 🦀 カニ (海のガラス玉): 軽やかな弦楽器ピチカート
+      flute: false,   // 🕊️ カモメ (望遠鏡): 伸びやかな風のフルート
+      bass: false,    // 👤 影 (オルゴール): 深海ベース＆幻想ベル
+    };
   }
 
   init() {
@@ -26,11 +35,11 @@ class IslandAudioEngine {
       this.sfxGain.connect(this.masterGain);
 
       this.bgmGain = this.ctx.createGain();
-      this.bgmGain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+      this.bgmGain.gain.setValueAtTime(0.35, this.ctx.currentTime);
       this.bgmGain.connect(this.masterGain);
 
       this.startOceanWaves();
-      this.startMusicBoxBGM();
+      this.startSessionLoop();
     }
     if (this.ctx.state === 'suspended') {
       this.ctx.resume();
@@ -44,12 +53,20 @@ class IslandAudioEngine {
     return !this.isMuted;
   }
 
+  // 宝物の獲得状況に応じて楽器をアンロック
+  updateUnlockedTreasures(treasures) {
+    if (treasures.includes('star_stone')) this.unlocked.drums = true;
+    if (treasures.includes('glass_ball')) this.unlocked.strings = true;
+    if (treasures.includes('telescope')) this.unlocked.flute = true;
+    if (treasures.includes('music_box')) this.unlocked.bass = true;
+  }
+
   // 1. さざ波の環境音 (Ocean Waves)
   startOceanWaves() {
     setInterval(() => {
       if (!this.ctx || this.isMuted) return;
       const now = this.ctx.currentTime;
-      const duration = 4.0;
+      const duration = 4.5;
 
       const bufferSize = this.ctx.sampleRate * duration;
       const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
@@ -63,28 +80,27 @@ class IslandAudioEngine {
 
       const filter = this.ctx.createBiquadFilter();
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(300, now);
-      filter.frequency.linearRampToValueAtTime(700, now + duration * 0.4);
-      filter.frequency.linearRampToValueAtTime(200, now + duration);
+      filter.frequency.setValueAtTime(250, now);
+      filter.frequency.linearRampToValueAtTime(650, now + duration * 0.4);
+      filter.frequency.linearRampToValueAtTime(180, now + duration);
 
       const gain = this.ctx.createGain();
-      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.setValueAtTime(0.07, now);
 
       noise.connect(filter);
       filter.connect(gain);
       gain.connect(this.sfxGain);
 
       noise.start(now);
-    }, 4500);
+    }, 4800);
   }
 
-  // 2. エモート音 (Wave, Bow, Dance, Think, Clap, Surprise)
+  // 2. エモート音
   playEmoteSound(type) {
     if (!this.ctx || this.isMuted) return;
     const now = this.ctx.currentTime;
 
     if (type === 'wave') {
-      // ピロリン♪ (挨拶)
       [587.33, 880.00].forEach((freq, idx) => {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -98,7 +114,6 @@ class IslandAudioEngine {
         osc.stop(now + idx * 0.08 + 0.25);
       });
     } else if (type === 'bow') {
-      // コトッ (おじぎ)
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'triangle';
@@ -111,7 +126,6 @@ class IslandAudioEngine {
       osc.start(now);
       osc.stop(now + 0.2);
     } else if (type === 'dance') {
-      // トゥララ〜♪ (おどり)
       [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -125,7 +139,6 @@ class IslandAudioEngine {
         osc.stop(now + idx * 0.06 + 0.2);
       });
     } else if (type === 'think') {
-      // ホワン？ (首かしげ)
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'sine';
@@ -138,7 +151,6 @@ class IslandAudioEngine {
       osc.start(now);
       osc.stop(now + 0.22);
     } else if (type === 'clap') {
-      // パチパチ (拍手)
       [0, 0.08, 0.16].forEach((offset) => {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -152,7 +164,6 @@ class IslandAudioEngine {
         osc.stop(now + offset + 0.06);
       });
     } else if (type === 'surprise') {
-      // ピキーン！ (おどろき)
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'sawtooth';
@@ -167,13 +178,12 @@ class IslandAudioEngine {
     }
   }
 
-  // 3. 住人NPCのリアクションボイス (クマ、カモメ、カニ、影)
+  // 3. 住人NPCボイス
   playNPCVoice(npcId, isHappy = true) {
     if (!this.ctx || this.isMuted) return;
     const now = this.ctx.currentTime;
 
     if (npcId === 'bear') {
-      // クマ: 低音のモコモコ声 (嬉しい時は高め、怒るとブブー)
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'triangle';
@@ -187,7 +197,6 @@ class IslandAudioEngine {
       osc.start(now);
       osc.stop(now + 0.32);
     } else if (npcId === 'gull') {
-      // カモメ: ピヨピヨ・クワッ
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'sawtooth';
@@ -200,7 +209,6 @@ class IslandAudioEngine {
       osc.start(now);
       osc.stop(now + 0.22);
     } else if (npcId === 'crab') {
-      // カニ: カチカチカチッ
       [0, 0.05, 0.1].forEach(offset => {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -214,7 +222,6 @@ class IslandAudioEngine {
         osc.stop(now + offset + 0.04);
       });
     } else if (npcId === 'shadow') {
-      // 影ぼうし: ヒソヒソ・不気味なシンセ音
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'sine';
@@ -230,15 +237,15 @@ class IslandAudioEngine {
     }
   }
 
-  // 4. 宝物獲得ファンファーレ (Treasure Fanfare)
+  // 4. 宝物獲得ファンファーレ
   playTreasureFanfare() {
     if (!this.ctx || this.isMuted) return;
     const now = this.ctx.currentTime;
     const melody = [
-      { f: 523.25, d: 0.12 }, // C5
-      { f: 659.25, d: 0.12 }, // E5
-      { f: 783.99, d: 0.12 }, // G5
-      { f: 1046.50, d: 0.4 }, // C6
+      { f: 523.25, d: 0.12 },
+      { f: 659.25, d: 0.12 },
+      { f: 783.99, d: 0.12 },
+      { f: 1046.50, d: 0.45 },
     ];
     let time = 0;
     melody.forEach(note => {
@@ -256,7 +263,7 @@ class IslandAudioEngine {
     });
   }
 
-  // 5. アイテム入手音 (Pop)
+  // 5. アイテム入手音
   playItemPickup() {
     if (!this.ctx || this.isMuted) return;
     const now = this.ctx.currentTime;
@@ -273,38 +280,166 @@ class IslandAudioEngine {
     osc.stop(now + 0.1);
   }
 
-  // 6. ノスタルジック・オルゴールBGM (Music Box Loop)
-  startMusicBoxBGM() {
-    // 哀愁と温もりのあるメロディ (D - A - Bm - F#m - G - D - Em - A)
-    const melodyNotes = [
+  // ========================================================
+  // 6. インタラクティブ四重奏セッションBGM (Interactive Quartet)
+  // ========================================================
+  startSessionLoop() {
+    // 16拍サイクル (D - A - Bm - F#m - G - D - Em - A)
+    const melodyTrack = [
       587.33, 659.25, 739.99, 880.00,
       739.99, 659.25, 587.33, 440.00,
       493.88, 587.33, 739.99, 659.25,
       587.33, 493.88, 440.00, 370.00
     ];
-    let noteIdx = 0;
 
-    this.bgmTimer = setInterval(() => {
+    // 🕊️ カモメのフルート (美しい高音ハーモニー・オブリガート)
+    const fluteTrack = [
+      880.00, 0, 1174.66, 0,
+      1108.73, 0, 880.00, 0,
+      987.77, 0, 1174.66, 0,
+      880.00, 739.99, 659.25, 0
+    ];
+
+    // 🦀 カニの弦楽器ピチカート (D, A, Bm, F#m, G, D, Em, A のコード分散)
+    const stringsTrack = [
+      [293.66, 369.99, 440.00], // D
+      [220.00, 277.18, 329.63], // A
+      [246.94, 293.66, 369.99], // Bm
+      [185.00, 220.00, 277.18], // F#m
+      [196.00, 246.94, 293.66], // G
+      [293.66, 369.99, 440.00], // D
+      [164.81, 196.00, 246.94], // Em
+      [220.00, 277.18, 329.63], // A
+    ];
+
+    // 👤 影のサブベース (ルート音)
+    const bassTrack = [
+      146.83, 146.83, 110.00, 110.00,
+      123.47, 123.47, 92.50, 92.50,
+      98.00, 98.00, 146.83, 146.83,
+      82.41, 82.41, 110.00, 110.00
+    ];
+
+    this.bgmInterval = setInterval(() => {
       if (!this.ctx || this.isMuted) return;
-      const freq = melodyNotes[noteIdx];
       const now = this.ctx.currentTime;
+      const step = this.stepIndex % 16;
+      const chordIdx = Math.floor(step / 2);
 
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(freq, now);
+      // --- [基本] オルゴール / 木琴 (Music Box) ---
+      const mFreq = melodyTrack[step];
+      if (mFreq > 0) {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(mFreq, now);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 1.4);
+        osc.connect(gain);
+        gain.connect(this.bgmGain);
+        osc.start(now);
+        osc.stop(now + 1.5);
+      }
 
-      gain.gain.setValueAtTime(0.18, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
+      // --- [1. クマ] 🐻 大地の太鼓・パーカッション (Drums) ---
+      if (this.unlocked.drums) {
+        // バスドラム (拍の頭)
+        if (step % 4 === 0) {
+          const drumOsc = this.ctx.createOscillator();
+          const drumGain = this.ctx.createGain();
+          drumOsc.type = 'sine';
+          drumOsc.frequency.setValueAtTime(110, now);
+          drumOsc.frequency.exponentialRampToValueAtTime(35, now + 0.18);
+          drumGain.gain.setValueAtTime(0.35, now);
+          drumGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+          drumOsc.connect(drumGain);
+          drumGain.connect(this.bgmGain);
+          drumOsc.start(now);
+          drumOsc.stop(now + 0.22);
+        }
+        // 木製リムショット / ウッドブロック (裏拍)
+        if (step % 4 === 2 || step % 4 === 3) {
+          const woodOsc = this.ctx.createOscillator();
+          const woodGain = this.ctx.createGain();
+          woodOsc.type = 'triangle';
+          woodOsc.frequency.setValueAtTime(step % 4 === 2 ? 620 : 750, now);
+          woodGain.gain.setValueAtTime(0.15, now);
+          woodGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          woodOsc.connect(woodGain);
+          woodGain.connect(this.bgmGain);
+          woodOsc.start(now);
+          woodOsc.stop(now + 0.1);
+        }
+      }
 
-      osc.connect(gain);
-      gain.connect(this.bgmGain);
+      // --- [2. カニ] 🦀 軽やかな弦楽器ピチカート (Strings Pluck) ---
+      if (this.unlocked.strings) {
+        const chord = stringsTrack[chordIdx];
+        const noteFreq = chord[step % chord.length];
+        const strOsc = this.ctx.createOscillator();
+        const strGain = this.ctx.createGain();
+        strOsc.type = 'triangle';
+        strOsc.frequency.setValueAtTime(noteFreq * (step % 2 === 0 ? 1 : 2), now);
+        strGain.gain.setValueAtTime(0.14, now);
+        strGain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+        strOsc.connect(strGain);
+        strGain.connect(this.bgmGain);
+        strOsc.start(now);
+        strOsc.stop(now + 0.5);
+      }
 
-      osc.start(now);
-      osc.stop(now + 1.7);
+      // --- [3. カモメ] 🕊️ 澄みわたる風のフルート (Flute Harmony) ---
+      if (this.unlocked.flute) {
+        const fFreq = fluteTrack[step];
+        if (fFreq > 0) {
+          const fluteOsc = this.ctx.createOscillator();
+          const fluteGain = this.ctx.createGain();
+          fluteOsc.type = 'sine';
+          fluteOsc.frequency.setValueAtTime(fFreq, now);
 
-      noteIdx = (noteIdx + 1) % melodyNotes.length;
-    }, 700);
+          // 優しいブレス＆ヴィブラート
+          fluteGain.gain.setValueAtTime(0.02, now);
+          fluteGain.gain.linearRampToValueAtTime(0.12, now + 0.1);
+          fluteGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+
+          fluteOsc.connect(fluteGain);
+          fluteGain.connect(this.bgmGain);
+          fluteOsc.start(now);
+          fluteOsc.stop(now + 1.3);
+        }
+      }
+
+      // --- [4. 影ぼうし] 👤 深海ベース ＆ 幻想ベルパッド (Bass & Chimes) ---
+      if (this.unlocked.bass) {
+        const bFreq = bassTrack[step];
+        const bassOsc = this.ctx.createOscillator();
+        const bassGain = this.ctx.createGain();
+        bassOsc.type = 'sine';
+        bassOsc.frequency.setValueAtTime(bFreq, now);
+        bassGain.gain.setValueAtTime(0.22, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.01, now + 0.9);
+        bassOsc.connect(bassGain);
+        bassGain.connect(this.bgmGain);
+        bassOsc.start(now);
+        bassOsc.stop(now + 1.0);
+
+        // キラキラ光る天空ベル (8拍に1回)
+        if (step % 8 === 0) {
+          const bellOsc = this.ctx.createOscillator();
+          const bellGain = this.ctx.createGain();
+          bellOsc.type = 'triangle';
+          bellOsc.frequency.setValueAtTime(1480, now);
+          bellGain.gain.setValueAtTime(0.1, now);
+          bellGain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+          bellOsc.connect(bellGain);
+          bellGain.connect(this.bgmGain);
+          bellOsc.start(now);
+          bellOsc.stop(now + 1.9);
+        }
+      }
+
+      this.stepIndex++;
+    }, 600);
   }
 }
 
