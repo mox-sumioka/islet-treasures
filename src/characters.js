@@ -157,14 +157,13 @@ export class ResidentNPC {
     this.scene = scene;
     this.mixer = null;
 
+    this.bubbleEmoji = '❓';
+    this.bubbleTimer = 0;
+    this.isSatisfied = false;
+
     if (meshBuilder) {
       meshBuilder(this.group, this);
     }
-    this.scene.add(this.group);
-    this.bubbleTimer = 0;
-
-    this.isSatisfied = false;
-    this.hasGivenTreasure = false;
     this.scene.add(this.group);
   }
 
@@ -179,7 +178,11 @@ export class ResidentNPC {
     }
 
     if (this.mixer) {
-      this.mixer.update(delta);
+      try {
+        this.mixer.update(delta);
+      } catch (err) {
+        // ignore animation error
+      }
     }
 
     // のんびり呼吸・揺れアニメーション
@@ -222,49 +225,64 @@ export function createIslandNPCs(scene) {
 
   // 2. 🕊️ 灯台のカモメ爺さん (Gull) - ユーザーのオリジナルBlenderモデル (kamome.glb)
   const gull = new ResidentNPC('gull', '灯台のカモメ爺さん', new THREE.Vector3(5.5, 1.4, -3.2), scene, (group, npcInstance) => {
+    // まず仮のプレースホルダーを配置して即座に画面に表示されるようにする
+    const fallbackMesh = new THREE.Group();
+    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.38, 8, 8), whiteMat);
+    body.position.y = 0.45;
+    fallbackMesh.add(body);
+
+    const beak = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.35, 6), new THREE.MeshStandardMaterial({ color: 0xf4a261 }));
+    beak.rotation.x = Math.PI / 2;
+    beak.position.set(0, 0.48, 0.45);
+    fallbackMesh.add(beak);
+    group.add(fallbackMesh);
+
+    // モデルパス (BASE_URL対応)
+    const baseUrl = import.meta.env.BASE_URL || './';
+    const modelUrl = `${baseUrl.endsWith('/') ? baseUrl : baseUrl + '/'}models/kamome.glb`;
+
     // Blenderカスタムモデルのロード
     gltfLoader.load(
-      './models/kamome.glb',
+      modelUrl,
       (gltf) => {
-        const model = gltf.scene;
+        try {
+          const model = gltf.scene;
 
-        // モデルのバウンディングボックスを計算して適切なサイズに自動スケール
-        const box = new THREE.Box3().setFromObject(model);
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        const targetSize = 1.0; // カモメの目標サイズ
-        const scaleFactor = targetSize / (maxDim || 1.0);
+          // モデルのバウンディングボックスを計算して適切なサイズに自動スケール
+          const box = new THREE.Box3().setFromObject(model);
+          const size = box.getSize(new THREE.Vector3());
+          const maxDim = Math.max(size.x, size.y, size.z);
+          const targetSize = 1.0; // カモメの目標サイズ
+          const scaleFactor = targetSize / (maxDim || 1.0);
 
-        model.scale.set(scaleFactor, scaleFactor, scaleFactor);
-        model.position.set(0, 0, 0);
+          model.scale.set(scaleFactor, scaleFactor, scaleFactor);
+          model.position.set(0, 0, 0);
 
-        model.traverse((child) => {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-            if (child.material) {
-              child.material.roughness = 0.6;
+          model.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
             }
+          });
+
+          // ロード成功したら仮メッシュを削除してモデルを追加
+          group.remove(fallbackMesh);
+          group.add(model);
+
+          // アニメーションがある場合は再生
+          if (gltf.animations && gltf.animations.length > 0) {
+            npcInstance.mixer = new THREE.AnimationMixer(model);
+            const action = npcInstance.mixer.clipAction(gltf.animations[0]);
+            action.play();
           }
-        });
-
-        group.add(model);
-
-        // アニメーションがある場合は再生
-        if (gltf.animations && gltf.animations.length > 0) {
-          npcInstance.mixer = new THREE.AnimationMixer(model);
-          const action = npcInstance.mixer.clipAction(gltf.animations[0]);
-          action.play();
+        } catch (e) {
+          console.warn('Error parsing gltf model:', e);
         }
       },
       undefined,
       (error) => {
-        console.warn('Fallback to procedural gull due to load error:', error);
-        // フォールバック用の手作りカモメ
-        const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
-        const body = new THREE.Mesh(new THREE.SphereGeometry(0.38, 8, 8), whiteMat);
-        body.position.y = 0.45;
-        group.add(body);
+        console.warn('GLTFLoader failed to load kamome.glb, using fallback:', error);
       }
     );
   });
