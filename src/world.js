@@ -9,29 +9,29 @@ export const PICKABLE_ITEMS_DEF = [
     id: 'berry',
     name: 'あまい木の実',
     emoji: '🍎',
-    color: 0xe63946,
-    pos: new THREE.Vector3(-4, 0.4, 3),
+    color: 0xff3b30,
+    pos: new THREE.Vector3(-2.5, 1.4, 4.0), // クマから離れた森の木陰
   },
   {
     id: 'shell',
     name: 'きれいな桜貝',
     emoji: '🐚',
-    color: 0xffb5a7,
-    pos: new THREE.Vector3(7, 0.2, 5),
+    color: 0xffa8ba,
+    pos: new THREE.Vector3(5.5, 1.05, 2.5), // 浜辺の砂の上
   },
   {
     id: 'mushroom',
     name: '光る青キノコ',
     emoji: '🍄',
-    color: 0x48cae4,
-    pos: new THREE.Vector3(-6, 0.5, -2.5),
+    color: 0x00b4d8,
+    pos: new THREE.Vector3(-6.5, 1.4, -1.5), // 井戸の近くの草地の上
   },
   {
     id: 'coin',
     name: '古びた金のコイン',
     emoji: '🪙',
-    color: 0xf4a261,
-    pos: new THREE.Vector3(5, 1.2, -6),
+    color: 0xffd166,
+    pos: new THREE.Vector3(7.0, 1.4, -4.0), // 灯台の脇
   },
 ];
 
@@ -259,25 +259,86 @@ export class IslandWorld {
       const group = new THREE.Group();
       group.position.copy(def.pos);
 
-      // アイテム本体メッシュ
-      const geo = new THREE.DodecahedronGeometry(0.25);
-      const mat = new THREE.MeshStandardMaterial({
-        color: def.color,
-        roughness: 0.3,
-        metalness: 0.3,
-        emissive: def.color,
-        emissiveIntensity: 0.3,
-        flatShading: true,
-      });
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.y = 0.3;
-      mesh.castShadow = true;
-      group.add(mesh);
+      // アイテム本体の3Dモデル
+      const itemMeshGroup = new THREE.Group();
 
-      // 光の輪 (Glow Ring)
+      if (def.id === 'berry') {
+        // 🍎 りんご (木の実)
+        const apple = new THREE.Mesh(
+          new THREE.SphereGeometry(0.25, 8, 8),
+          new THREE.MeshStandardMaterial({ color: 0xff3333, roughness: 0.3, emissive: 0x440000 })
+        );
+        apple.position.y = 0.25;
+        itemMeshGroup.add(apple);
+
+        // 枝 & 葉
+        const stem = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.03, 0.03, 0.12, 4),
+          new THREE.MeshStandardMaterial({ color: 0x5c3d2e })
+        );
+        stem.position.set(0, 0.5, 0);
+        itemMeshGroup.add(stem);
+
+        const leaf = new THREE.Mesh(
+          new THREE.SphereGeometry(0.08, 4, 4),
+          new THREE.MeshStandardMaterial({ color: 0x40916c })
+        );
+        leaf.scale.set(1.5, 0.3, 0.8);
+        leaf.position.set(0.08, 0.52, 0);
+        itemMeshGroup.add(leaf);
+
+      } else if (def.id === 'shell') {
+        // 🐚 桜貝 (ピンクの二枚貝)
+        const shellMat = new THREE.MeshStandardMaterial({ color: 0xffafcc, roughness: 0.2, metalness: 0.2, side: THREE.DoubleSide });
+        const shell1 = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.35, 6, 1, true), shellMat);
+        shell1.rotation.x = -Math.PI / 4;
+        shell1.position.y = 0.25;
+        itemMeshGroup.add(shell1);
+
+        const pearl = new THREE.Mesh(
+          new THREE.SphereGeometry(0.08, 8, 8),
+          new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.1, emissive: 0x222222 })
+        );
+        pearl.position.set(0, 0.2, 0.05);
+        itemMeshGroup.add(pearl);
+
+      } else if (def.id === 'mushroom') {
+        // 🍄 光る青キノコ
+        const capMat = new THREE.MeshStandardMaterial({ color: 0x00b4d8, roughness: 0.3, emissive: 0x0077b6, emissiveIntensity: 0.6 });
+        const cap = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.35, 8), capMat);
+        cap.position.y = 0.38;
+        itemMeshGroup.add(cap);
+
+        const stem = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.1, 0.14, 0.3, 6),
+          new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 })
+        );
+        stem.position.y = 0.18;
+        itemMeshGroup.add(stem);
+
+        // キノコの発光PointLight
+        const shroomLight = new THREE.PointLight(0x00b4d8, 1.5, 3);
+        shroomLight.position.set(0, 0.4, 0);
+        itemMeshGroup.add(shroomLight);
+
+      } else if (def.id === 'coin') {
+        // 🪙 金のコイン
+        const coinMat = new THREE.MeshStandardMaterial({ color: 0xffd166, roughness: 0.2, metalness: 0.8, emissive: 0x664400 });
+        const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.06, 12), coinMat);
+        coin.rotation.x = Math.PI / 3;
+        coin.position.y = 0.25;
+        itemMeshGroup.add(coin);
+      }
+
+      itemMeshGroup.traverse(m => {
+        if (m.isMesh) m.castShadow = true;
+      });
+      group.add(itemMeshGroup);
+
+      // 足元の光るリング (Glow Indicator Ring)
       const ring = new THREE.Mesh(
-        new THREE.RingGeometry(0.3, 0.45, 16),
-        new THREE.MeshBasicMaterial({ color: def.color, side: THREE.DoubleSide, transparent: true, opacity: 0.6 })
+        new THREE.RingGeometry(0.35, 0.55, 16),
+        new THREE.MeshBasicMaterial({ color: def.color, side: THREE.DoubleSide, transparent: true, opacity: 0.7 })
       );
       ring.rotation.x = -Math.PI / 2;
       ring.position.y = 0.05;
@@ -289,7 +350,7 @@ export class IslandWorld {
         name: def.name,
         emoji: def.emoji,
         group: group,
-        mesh: mesh,
+        mesh: itemMeshGroup,
         pos: def.pos,
         isCollected: false,
       });
