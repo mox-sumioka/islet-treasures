@@ -198,7 +198,8 @@ function main() {
     scene.fog = new THREE.FogExp2(0xa8dadc, 0.025);
 
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 12, 16);
+    camera.position.set(0, 10, 38);
+    const camLookAt = new THREE.Vector3(0, 1.15, 26);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -436,14 +437,64 @@ function main() {
     // 近接プロンプト更新
     updateProximityPrompts();
 
-    // Smooth Camera Follow (広大な島を見渡す滑らかなクォータービュー追従)
-    const targetCamPos = new THREE.Vector3(
-      player.group.position.x,
-      player.group.position.y + 9.5,
-      player.group.position.z + 12.0
-    );
-    camera.position.lerp(targetCamPos, delta * 4.5);
-    camera.lookAt(new THREE.Vector3(player.group.position.x, player.group.position.y + 0.5, player.group.position.z));
+    // 5. Dynamic Camera System (通常クォータービュー ⇄ NPC接近時シネマティック・ツーショット)
+    let closeNPC = null;
+    let minNpcDist = 4.5;
+    npcs.forEach(npc => {
+      const d = player.group.position.distanceTo(npc.group.position);
+      if (d < minNpcDist) {
+        minNpcDist = d;
+        closeNPC = npc;
+      }
+    });
+
+    const targetCamPos = new THREE.Vector3();
+    const targetLookAt = new THREE.Vector3();
+
+    if (closeNPC) {
+      // --- [NPC接近時: 背中に隠れないクローズアップ構図] ---
+      const pPos = player.group.position;
+      const nPos = closeNPC.group.position;
+
+      // 二人の中心点 (NPCにやや寄せてフォーカス)
+      const focusCenter = new THREE.Vector3().lerpVectors(pPos, nPos, 0.65);
+      targetLookAt.set(focusCenter.x, nPos.y + 0.55, focusCenter.z);
+
+      // 二人を結ぶ線に対して垂直なサイドベクトル (背中隠れ防止)
+      const dir = new THREE.Vector3().subVectors(nPos, pPos);
+      dir.y = 0;
+      if (dir.lengthSq() > 0.001) dir.normalize();
+
+      const side = new THREE.Vector3(-dir.z, 0, dir.x);
+      // カメラが常に手前側(+Z)から美しく二人を収めるように調整
+      const camSide = (side.z < 0) ? side.clone().negate() : side;
+
+      // 横斜め手前からクローズアップ (高さ2.3m, 距離4.2m)
+      targetCamPos.copy(focusCenter)
+        .addScaledVector(camSide, 2.6)
+        .add(new THREE.Vector3(0, 2.2, 3.4));
+
+      camera.position.lerp(targetCamPos, delta * 3.2);
+      camLookAt.lerp(targetLookAt, delta * 3.8);
+      camera.lookAt(camLookAt);
+
+    } else {
+      // --- [通常探索時: 広大な島を見渡す滑らかなクォータービュー] ---
+      targetLookAt.set(
+        player.group.position.x,
+        player.group.position.y + 0.5,
+        player.group.position.z
+      );
+      targetCamPos.set(
+        player.group.position.x,
+        player.group.position.y + 9.5,
+        player.group.position.z + 12.0
+      );
+
+      camera.position.lerp(targetCamPos, delta * 4.0);
+      camLookAt.lerp(targetLookAt, delta * 4.5);
+      camera.lookAt(camLookAt);
+    }
 
     // 3D Speech Bubble Projection to 2D HUD
     ui.updateNPCBubbles(npcs, camera, window.innerWidth, window.innerHeight);
