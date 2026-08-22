@@ -30,6 +30,7 @@ export class PlayerCharacter {
     const clothMat = new THREE.MeshStandardMaterial({ color: 0x2a9d8f, roughness: 0.7, flatShading: true });
     const hatMat = new THREE.MeshStandardMaterial({ color: 0xe9c46a, roughness: 0.9, flatShading: true });
     const bagMat = new THREE.MeshStandardMaterial({ color: 0x9b5de5, roughness: 0.8, flatShading: true });
+    const armMat = new THREE.MeshStandardMaterial({ color: 0x2a9d8f, roughness: 0.7, flatShading: true });
 
     // 胴体 (Body)
     const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 0.5, 6), clothMat);
@@ -38,6 +39,22 @@ export class PlayerCharacter {
     this.group.add(body);
     this.bodyMesh = body;
 
+    // リュック (Backpack) - 胴体の子にしておじぎと完全連動！
+    const bag = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.35, 0.18), bagMat);
+    bag.position.set(0, 0.05, -0.25);
+    bag.castShadow = true;
+    body.add(bag);
+    this.backpackMesh = bag;
+
+    // 腕 (Arms) - 胴体の子にしておじぎと自然に連動
+    this.leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.32, 6), armMat);
+    this.leftArm.position.set(-0.32, 0.05, 0);
+    body.add(this.leftArm);
+
+    this.rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.32, 6), armMat);
+    this.rightArm.position.set(0.32, 0.05, 0);
+    body.add(this.rightArm);
+
     // 頭 (Head)
     const head = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), skinMat);
     head.position.y = 0.95;
@@ -45,29 +62,18 @@ export class PlayerCharacter {
     this.group.add(head);
     this.headMesh = head;
 
-    // 帽子 (Straw Hat)
+    // 帽子 (Straw Hat) - 頭の子にしておじぎと完全連動！
+    const hatGroup = new THREE.Group();
     const hatBrim = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.04, 8), hatMat);
-    hatBrim.position.y = 1.12;
-    this.group.add(hatBrim);
+    hatBrim.position.y = 0.17;
+    hatGroup.add(hatBrim);
+
     const hatTop = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.25, 0.18, 8), hatMat);
-    hatTop.position.y = 1.22;
-    this.group.add(hatTop);
+    hatTop.position.y = 0.27;
+    hatGroup.add(hatTop);
 
-    // リュック (Backpack)
-    const bag = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.35, 0.18), bagMat);
-    bag.position.set(0, 0.55, -0.25);
-    bag.castShadow = true;
-    this.group.add(bag);
-
-    // 腕 (Arms)
-    const armMat = new THREE.MeshStandardMaterial({ color: 0x2a9d8f, roughness: 0.7, flatShading: true });
-    this.leftArm = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.32, 6), armMat);
-    this.leftArm.position.set(-0.32, 0.52, 0);
-    this.group.add(this.leftArm);
-
-    this.rightArm = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.32, 6), armMat);
-    this.rightArm.position.set(0.32, 0.52, 0);
-    this.group.add(this.rightArm);
+    head.add(hatGroup);
+    this.hatMesh = hatGroup;
   }
 
   playEmote(type) {
@@ -76,38 +82,48 @@ export class PlayerCharacter {
   }
 
   update(delta, inputDir, world) {
+    const groundY = world ? world.getGroundHeight(this.group.position.x, this.group.position.z) : 1.4;
+    this.group.position.y = groundY; // カメラを揺らさないようルートY座標は常に地面に固定！
+
     // 1. エモートアニメーション
     if (this.emoteTimer > 0) {
       this.emoteTimer -= delta;
       const t = Date.now() / 150;
 
-      const groundY = world ? world.getGroundHeight(this.group.position.x, this.group.position.z) : 1.4;
-
       if (this.currentEmote === 'wave') {
-        this.rightArm.position.y = 0.85;
+        this.rightArm.position.y = 0.25;
         this.rightArm.rotation.z = Math.sin(t * 2) * 0.5 - 0.8;
       } else if (this.currentEmote === 'bow') {
-        this.bodyMesh.rotation.x = 0.5;
-        this.headMesh.position.z = 0.15;
+        // おじぎ: 胴体と頭を自然に前に倒す (帽子・リュック・腕も完全に連動)
+        this.bodyMesh.rotation.x = 0.55;
+        this.headMesh.rotation.x = 0.45;
+        this.headMesh.position.set(0, 0.92, 0.12);
       } else if (this.currentEmote === 'dance') {
-        this.group.position.y = groundY + Math.abs(Math.sin(t * 1.5)) * 0.3;
+        // ダンス: カメラを揺らさないよう体パーツのみピョンピョン跳ねる
+        const hop = Math.abs(Math.sin(t * 1.5)) * 0.25;
+        this.bodyMesh.position.y = 0.5 + hop;
+        this.headMesh.position.y = 0.95 + hop;
         this.group.rotation.y += delta * 6;
       } else if (this.currentEmote === 'clap') {
         this.leftArm.rotation.z = 0.8;
         this.rightArm.rotation.z = -0.8;
       } else if (this.currentEmote === 'surprise') {
-        this.group.position.y = groundY + Math.abs(Math.sin(t * 3)) * 0.4;
+        // おどろき: 体パーツのみピョンと跳ねる
+        const hop = Math.abs(Math.sin(t * 3)) * 0.35;
+        this.bodyMesh.position.y = 0.5 + hop;
+        this.headMesh.position.y = 0.95 + hop;
       }
       return;
     }
 
     // エモート終了時のリセット
     this.bodyMesh.rotation.x = 0;
-    this.headMesh.position.z = 0;
+    this.headMesh.rotation.x = 0;
+    this.headMesh.position.set(0, 0.95, 0);
     this.leftArm.rotation.set(0, 0, 0);
     this.rightArm.rotation.set(0, 0, 0);
-    this.leftArm.position.set(-0.32, 0.52, 0);
-    this.rightArm.position.set(0.32, 0.52, 0);
+    this.leftArm.position.set(-0.32, 0.05, 0);
+    this.rightArm.position.set(0.32, 0.05, 0);
 
     // 2. 移動処理
     this.isMoving = inputDir.lengthSq() > 0.01;
@@ -123,10 +139,6 @@ export class PlayerCharacter {
         this.group.position.copy(nextPos);
       }
 
-      // 地形の高さに滑らかに追従 (丘や砂浜で埋まらない)
-      const groundY = world ? world.getGroundHeight(this.group.position.x, this.group.position.z) : 1.4;
-      this.group.position.y = groundY;
-
       // 進行方向を向く
       const angle = Math.atan2(this.moveDir.x, this.moveDir.z);
       this.group.rotation.y = THREE.MathUtils.lerp(this.group.rotation.y, angle, delta * 12);
@@ -138,8 +150,6 @@ export class PlayerCharacter {
       this.leftArm.rotation.x = Math.sin(this.walkCycle) * 0.6;
       this.rightArm.rotation.x = -Math.sin(this.walkCycle) * 0.6;
     } else {
-      const groundY = world ? world.getGroundHeight(this.group.position.x, this.group.position.z) : 1.4;
-      this.group.position.y = groundY;
       this.bodyMesh.position.y = 0.5;
       this.headMesh.position.y = 0.95;
       this.leftArm.rotation.x = 0;
